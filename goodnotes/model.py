@@ -447,3 +447,903 @@ SCHEMA_VERSION = 24  # stamped on every record GoodNotes writes (field 16/18/21/
 DJB2_EMPTY = 5381
 
 
+# --- page items ------------------------------------------------------------
+
+class Item:
+    """One element on a page: a metadata record plus a payload record.
+
+    `kind` names the payload by its top-level field: 'stroke' (7), 'box'
+    (21: shapes and text boxes), 'sticky' (20), 'line' (22), 'image' (1:
+    images, stickers and element sticky notes), 'math' (11). Unknown kinds
+    keep their field number and still round-trip.
+    """
+    KINDS = {7: "stroke", 21: "box", 20: "sticky", 22: "line", 1: "image", 11: "math"}
+
+    def __init__(self, meta: Msg | None, payload: Msg | None):
+        self.meta, self.payload = meta, payload
+
+    @property
+    def field(self) -> int | None:
+        if self.payload is None or not self.payload.fields:
+            return None
+        return self.payload.fields[0][0]
+
+    @property
+    def kind(self) -> str:
+        return self.KINDS.get(self.field, f"field{self.field}")
+
+    @property
+    def body(self) -> Msg:
+        return self.payload.sub(self.field)
+
+    @property
+    def id(self) -> str | None:
+        return self.meta.str(1) if self.meta is not None else self.body.str(1)
+
+    @property
+    def deleted(self) -> bool:
+        """Tombstoned (erased/deleted) items stay in the file with this flag."""
+        return self.meta is not None and self.meta.int(3) == 1
+
+    @property
+    def sequence(self) -> int:
+        return self.meta.int(9) if self.meta is not None else 0
+
+    def typed(self):
+        cls = _VIEWS.get(self.kind)
+        return cls(self) if cls else self
+
+    def __repr__(self) -> str:
+        return f"<{self.kind} {self.id}{' deleted' if self.deleted else ''}>"
+
+
+class View:
+    """Base for typed views; `item.body` is the payload submessage."""
+
+    def __init__(self, item: Item):
+        self.item = item
+        self.b = item.body
+
+    @property
+    def id(self):
+        return self.item.id
+
+    def __repr__(self) -> str:
+        return f"<{type(self).__name__} {self.id}>"
+
+
+# --- strokes ---
+
+PEN_KINDS = {0: "ballpoint", 1: "fountain", 4: "brush", 5: "pencil"}  # body field 3
+
+
+class Stroke(View):
+    """Ink. Geometry lives in a bv41 template blob (field 2) whose schema
+    depends on the pen; `commands` decodes the common PStroke schema.
+    A recognized shape (shape tool / hold-to-snap) adds a descriptor at
+    field 9 and stores a placeholder path."""
+
+    @property
+    def color(self):
+        return read_color(self.b.sub(4))
+
+    @color.setter
+    def color(self, rgba):
+        self.b.set_bytes(4, write_color(rgba))
+
+    @property
+    def pen(self) -> str:
+        """ballpoint (constant width, PStroke), fountain / brush (variable
+        width with a precomputed outline), pencil (per-point width and
+        opacity). Highlighter, tape and shape-tool strokes are flags on top."""
+        return PEN_KINDS.get(self.b.int(3), f"pen{self.b.int(3)}")
+
+    @property
+    def tape(self) -> bool:
+        return bool(self.b.bytes(20))
+
+    @property
+    def highlighter(self) -> bool:
+        return self.b.int(5) == 1
+
+    @property
+    def template(self) -> Template:
+        return Template.parse(blob_decompress(self.b.bytes(2)))
+
+    @template.setter
+    def template(self, t: Template):
+        self.b.set_bytes(2, blob_compress(t.encode()))
+
+    @property
+    def shape(self) -> Msg | None:
+        """Recognized-shape descriptor: 1 {1 point...} = polyline/line,
+        3 {1 center, 2 size} = rectangle, 4 {1 center, 2 radii, 3 angle} =
+        ellipse; 5 {2 closed?}; 15 = line width."""
+        s = self.b.sub(9)
+        return s if s is not None and s.fields else None
+
+    # PStroke ('vuA(v)A(S(uu))A(S(uuuu))vA(f)') helpers
+    @property
+    def thickness(self) -> float:
+        t = self.template
+        return f32(t.values[1]) if t.schema.startswith("vu") else 0.0
+
+    @property
+    def commands(self) -> list[tuple]:
+        """[('M', (x, y)) | ('Q', (cx, cy), (x, y))] for PStroke blobs."""
+        t = self.template
+        if t.schema != PSTROKE:
+            raise ValueError(f"no path decoder for schema {t.schema}")
+        kinds, moves, quads = t.values[2], t.values[3], t.values[4]
+        out, mi, qi = [], 0, 0
+        for k in kinds:
+            if k == 0:
+                out.append(("M", tuple(map(f32, moves[mi]))))
+                mi += 1
+            else:
+                q = list(map(f32, quads[qi]))
+                out.append(("Q", (q[0], q[1]), (q[2], q[3])))
+                qi += 1
+        return out
+
+    def set_path(self, commands, thickness: float | None = None) -> None:
+        """Replace geometry with a PStroke path ('M'/'Q'/'L' commands)."""
+        th = self.thickness if thickness is None else thickness
+        kinds, moves, quads = [], [], []
+        cur = (0.0, 0.0)
+        for c in commands:
+            if c[0] == "M":
+                kinds.append(0)
+                moves.append([u32(c[1][0]), u32(c[1][1])])
+                cur = c[1]
+            else:
+                if c[0] == "L":
+                    ctrl, end = ((cur[0] + c[1][0]) / 2, (cur[1] + c[1][1]) / 2), c[1]
+                else:
+                    ctrl, end = c[1], c[2]
+                kinds.append(1)
+                quads.append([u32(ctrl[0]), u32(ctrl[1]), u32(end[0]), u32(end[1])])
+                cur = end
+        self.template = Template(PSTROKE, [2, u32(th), kinds, moves, quads, 1, []])
+        self.b.remove(3)  # pen kinds other than 0 use other schemas
+
+    def translate(self, dx: float, dy: float) -> None:
+        if self.template.schema == PSTROKE:
+            self.set_path([(c[0], *[(x + dx, y + dy) for x, y in c[1:]]) for c in self.commands])
+        s = self.shape
+        if s is not None:
+            _translate_shape(s, dx, dy)
+
+
+PSTROKE = "vuA(v)A(S(uu))A(S(uuuu))vA(f)"
+
+
+def _translate_shape(s: Msg, dx, dy):
+    poly = s.sub(1)
+    for p in (poly.subs(1) if poly is not None else []):  # polyline points
+        p.set_float(1, p.float(1) + dx)
+        p.set_float(2, p.float(2) + dy)
+    for n in (3, 4):  # rect origin / ellipse center
+        r = s.sub(n)
+        if r is not None:
+            p = r.sub(1, create=True)
+            p.set_float(1, p.float(1) + dx)
+            p.set_float(2, p.float(2) + dy)
+
+
+# --- boxes: shapes and text boxes (21) ---
+
+class RichText:
+    """Attributed text: runs of {1 text, 2 char attrs, 3 paragraph attrs}.
+
+    Char attrs: 3 color, 30 font name, 40 size (-404 = inherit), 50 italic,
+    60 weight (signed; -404 inherit, -30 bold), 70 ?.
+    Paragraph attrs: 2 alignment/spacing, 4 list style (2 = bullet).
+    """
+
+    def __init__(self, msg: Msg):
+        self.msg = msg
+
+    @property
+    def runs(self) -> list[Msg]:
+        return self.msg.subs(1)
+
+    @property
+    def text(self) -> str:
+        return "".join(r.str(1, "") for r in self.runs)
+
+    def set_text(self, s: str) -> None:
+        """Replace all text, keeping the first run's formatting."""
+        runs = self.runs
+        first = runs[0].copy() if runs else Msg()
+        first.set_bytes(1, s)
+        self.msg.remove(1)
+        self.msg.fields.insert(0, [1, LEN, first])
+
+    def set_color(self, rgba) -> None:
+        for r in self.runs:
+            r.sub(2, create=True).set_bytes(3, write_color(rgba))
+
+    def set_font(self, name: str | None = None, size: float | None = None) -> None:
+        for r in self.runs:
+            a = r.sub(2, create=True)
+            if name is not None:
+                a.set_bytes(30, name)
+            if size is not None:
+                a.set_float(40, size)
+
+
+# a shape's empty text, exactly as GoodNotes writes it, with its hash
+_EMPTY_TEXT = (b"\n]\x12.\x1a\x14\r\xf1\xf0\xf0=\x15\xd9\xd8\xd8=\x1d\xd9\xd8\xd8=%\x00\x00\x80?\xc5\x02"
+               b"\x00\x00\x80A\xe0\x03\xec\xfc\xff\xff\xff\xff\xff\xff\xff\x01\xb5\x04\x00\x00\xca\xc3\x1a+"
+               b"\n\x02\n\x00\x12\x0b\x08\xff\xff\xff\xff\xff\xff\xff\xff\xff\x01\x1a\x16\x08\xff\xff\xff"
+               b"\xff\xff\xff\xff\xff\xff\x01\x10\xff\xff\xff\xff\xff\xff\xff\xff\xff\x01 \x02")
+_EMPTY_TEXT_HASH = bytes.fromhex("afd2f3d38e516ada")
+
+
+class _Rect(View):
+    """Shared origin (20.1) and size (21.2) handling for box-like items."""
+
+    @property
+    def origin(self):
+        return read_point(self.b.path(20, 1))
+
+    @origin.setter
+    def origin(self, xy):
+        self.b.sub(20, create=True).set_bytes(1, write_point(*xy))
+
+    @property
+    def size(self):
+        s = self.b.sub(21)
+        dims = s.sub(2) if s is not None else None
+        return (dims.float(1), dims.float(2)) if dims is not None else (0.0, 0.0)
+
+    @size.setter
+    def size(self, wh):
+        d = self.b.sub(21, create=True).sub(2, create=True)
+        d.set_float(1, wh[0])
+        d.set_float(2, wh[1])
+
+    def translate(self, dx, dy):
+        x, y = self.origin
+        self.origin = (x + dx, y + dy)
+
+    def _text_msg(self, num: int) -> RichText | None:
+        t = self.b.sub(num)
+        blob = t.path(1).bytes(2) if t is not None and t.sub(1) is not None else None
+        return RichText(Msg.parse(blob_decompress(blob))) if blob else None
+
+    def _set_text_msg(self, num: int, rt: RichText) -> None:
+        holder = self.b.sub(num, create=True).sub(1, create=True)
+        body = rt.msg.encode()
+        holder.set_bytes(2, blob_compress(body))
+        # 8-byte content hash: 1:1 with the text body across the library,
+        # algorithm not identified; GoodNotes doesn't reject other values
+        holder.set_bytes(3, _EMPTY_TEXT_HASH if body == _EMPTY_TEXT else random.getrandbits(64).to_bytes(8, "little"))
+        holder.set_int(4, 1)
+
+
+class Box(_Rect):
+    """Shapes and text boxes share one record (21).
+
+    20 {1 origin, 3 scale}; 21 {2 {w, h, max}}; 22 geometry ({1 {1 corner
+    radius}} = rectangle, {2} = ellipse, {3 {1 polygon vertices in unit
+    square}} = other shapes); 30 fill {1 {1 color}}; 31 outline {1 width,
+    3 {1 color}}; 32 text {1 {2 rich-text blob}, 2 text size, 5 default
+    attrs, 10 insets}; 33 shadow; 8 group id (ties a sticker's editable
+    text to its image)."""
+
+    @property
+    def fill(self):
+        f = self.b.path(30, 1, 1)
+        return read_color(f, None) if f is not None else None
+
+    @fill.setter
+    def fill(self, rgba):
+        self.b.remove(30)
+        if rgba is not None:
+            self.b.sub(30, create=True).sub(1, create=True).set_bytes(1, write_color(rgba))
+
+    @property
+    def outline(self):
+        o = self.b.sub(31)
+        if o is None:
+            return None
+        return o.float(1), read_color(o.path(3, 1), None)
+
+    @outline.setter
+    def outline(self, width_rgba):
+        o = self.b.sub(31, create=True)
+        width, rgba = width_rgba
+        o.set_float(1, width)
+        o.sub(3, create=True).set_bytes(1, write_color(rgba))
+
+    @property
+    def text(self) -> RichText | None:
+        return self._text_msg(32)
+
+    @text.setter
+    def text(self, rt: RichText):
+        self._set_text_msg(32, rt)
+        self.b.sub(32).remove(2)  # measured text size; GoodNotes re-measures
+
+    @property
+    def vertices(self) -> list[tuple[float, float]] | None:
+        poly = self.b.path(22, 3, 1)
+        return [read_point(v.sub(1)) for v in poly.subs(1)] if poly is not None else None
+
+
+class Sticky(_Rect):
+    """Sticky-note tool (20): 30 paper color, 31 text (as Box 32),
+    32 author id, 33 author name."""
+
+    @property
+    def color(self):
+        return read_color(self.b.sub(30))
+
+    @color.setter
+    def color(self, rgba):
+        self.b.set_bytes(30, write_color(rgba))
+
+    @property
+    def text(self) -> RichText | None:
+        return self._text_msg(31)
+
+    @text.setter
+    def text(self, rt: RichText):
+        self._set_text_msg(31, rt)
+
+
+class Line(View):
+    """Lines and connectors (22). 20 = straight or curved line: {1 {1
+    start}, 2 mid handle (on the curve), 3 {1 end}}; 21 = elbow connector:
+    {1 {1 start}, 3 {1 end}, 5 {2 knee}}. 31 arrowheads (1 = end arrow),
+    32 stroke {1 width, 3 {1 color}}."""
+
+    def _point_msgs(self) -> list[Msg]:
+        g = self.b.sub(20) or self.b.sub(21)
+        if g is None:
+            return []
+        out = []
+        for f in g.fields:
+            if f[1] != LEN:
+                continue
+            p = g._parsed(f)
+            inner = p.sub(1) or p.sub(2)
+            out.append(inner if inner is not None and inner.fields else p)
+        return out
+
+    @property
+    def points(self) -> list[tuple[float, float]]:
+        """start, [corner/control], end — in stored order."""
+        return [read_point(p) for p in self._point_msgs()]
+
+    @property
+    def elbow(self) -> bool:
+        return self.b.sub(21) is not None
+
+    @property
+    def color(self):
+        return read_color(self.b.path(32, 3, 1))
+
+    @color.setter
+    def color(self, rgba):
+        self.b.sub(32, create=True).sub(3, create=True).set_bytes(1, write_color(rgba))
+
+    @property
+    def width(self) -> float:
+        s = self.b.sub(32)
+        return s.float(1) if s is not None else 0.0
+
+    @property
+    def arrow(self) -> int:
+        return self.b.int(31)
+
+    def translate(self, dx, dy):
+        for p in self._point_msgs():
+            p.set_float(1, p.float(1) + dx)
+            p.set_float(2, p.float(2) + dy)
+
+
+class Image(View):
+    """Placed image, sticker or element (1). 2 {origin, size}; 3 {center,
+    size, 3 angle in radians}; 4 attachment id; 6 kind (1 image,
+    3 element/sticker); 7 element group id."""
+
+    @property
+    def attachment(self) -> str:
+        return self.b.str(4)
+
+    @property
+    def center(self):
+        return read_point(self.b.path(3, 1))
+
+    @property
+    def size(self):
+        return read_point(self.b.path(3, 2))
+
+    @property
+    def angle(self) -> float:
+        r = self.b.sub(3)
+        return r.float(3) if r is not None else 0.0
+
+    def place(self, center, size, angle: float = 0.0) -> None:
+        cx, cy = center
+        w, h = size
+        # field 2 is the rotated image's axis-aligned bounding box
+        bw = abs(w * math.cos(angle)) + abs(h * math.sin(angle))
+        bh = abs(w * math.sin(angle)) + abs(h * math.cos(angle))
+        r2 = self.b.sub(2, create=True)
+        r2.fields = []
+        r2.set_bytes(1, write_point(cx - bw / 2, cy - bh / 2))
+        r2.set_bytes(2, write_point(bw, bh))
+        r3 = self.b.sub(3, create=True)
+        r3.fields = []
+        r3.set_bytes(1, write_point(cx, cy))
+        r3.set_bytes(2, write_point(w, h))
+        if angle:
+            r3.set_float(3, angle)
+
+    def translate(self, dx, dy):
+        (cx, cy), size = self.center, self.size
+        self.place((cx + dx, cy + dy), size, self.angle)
+
+
+class Math(View):
+    """Handwriting converted to math (11): 2/3 rects as Image, 4
+    attachment (rendered image), 9 LaTeX, 11 the original strokes
+    {1 blob, 2 color}."""
+
+    @property
+    def latex(self) -> str | None:
+        return self.b.str(9)
+
+
+_VIEWS = {"stroke": Stroke, "box": Box, "sticky": Sticky, "line": Line,
+          "image": Image, "math": Math}
+
+
+# --- pages and documents -----------------------------------------------------
+
+def _is_meta(m: Msg) -> bool:
+    return m.has(8) and m.has(9) and isinstance(m.get(1), (bytes, bytearray)) and len(m.get(1)) == 36
+
+
+_UUID_RE = re.compile(rb"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$")
+
+
+def uuid_plus(u: str, n: int = 1) -> str:
+    """A page's ink lives in notes/<page id + 1> (true for 192 of 206
+    library files; the rest are found through index.notes.pb)."""
+    return str(uuidlib.UUID(int=(uuidlib.UUID(u).int + n) % (1 << 128))).upper()
+
+
+# Page keys are fractional indexes compared as plain ASCII; this alphabet
+# covers every character seen in real keys.
+_KEY_ALPHABET = "!-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~"
+
+
+def key_between(a: str | None, b: str | None) -> str:
+    """A key that sorts strictly between a and b (None = open end)."""
+    lo, hi = _KEY_ALPHABET[0], _KEY_ALPHABET[-1]
+    a = a or ""
+    out = ""
+    i = 0
+    while True:
+        ca = a[i] if i < len(a) else lo
+        cb = b[i] if b is not None and i < len(b) else None
+        ia = _KEY_ALPHABET.index(ca) if ca in _KEY_ALPHABET else 0
+        ib = _KEY_ALPHABET.index(cb) if cb is not None and cb in _KEY_ALPHABET else len(_KEY_ALPHABET)
+        if ib - ia > 1:
+            return out + _KEY_ALPHABET[(ia + ib) // 2]
+        out += ca if i < len(a) else lo
+        if cb is not None and ib - ia == 1:
+            b = None  # anything after this prefix is below b now
+        i += 1
+
+
+def page_link(doc: "Document", page: "Page") -> str:
+    """URL GoodNotes uses for a link to a page of this document."""
+    import base64
+    import urllib.parse
+    anchor = base64.b64encode(f"page-{page.page_id}".encode()).decode()
+    frag = base64.b64encode(doc.doc_id.encode()).decode().rstrip("=")
+    return f"https://app.goodnotes.com/documents/?anchor={urllib.parse.quote(anchor)}#{frag}"
+
+
+class Page:
+    """One page: its ink/element records plus, when the event log has
+    them, its page event (54) and paper layer event (2)."""
+
+    def __init__(self, uuid: str, records: list[Msg], event: Msg | None = None,
+                 layer: Msg | None = None):
+        self.uuid, self.records = uuid, records  # uuid = notes id
+        self.event, self.layer = event, layer
+
+    @property
+    def page_id(self) -> str | None:
+        return self.event.str(2) if self.event is not None else None
+
+    @property
+    def key(self) -> str:
+        k = self.event.path(4) if self.event is not None else None
+        return k.str(1, "") if k is not None else ""
+
+    @property
+    def size(self) -> tuple[float, float]:
+        """Page size in page units (standard paper is 834.24 x 1078.82)."""
+        sz = self.layer.sub(8) if self.layer is not None else None
+        return read_point(sz) if sz is not None else (834.24, 1078.825)
+
+    @property
+    def background(self) -> tuple[str | None, int]:
+        """(attachment id of the background PDF/image, 1-based PDF page)."""
+        if self.layer is None:
+            return None, 1
+        return self.layer.str(4), self.layer.int(5, 1) or 1
+
+    @property
+    def template(self) -> str | None:
+        return self.layer.str(9) if self.layer is not None else None
+
+    @property
+    def items(self) -> list[Item]:
+        """Elements in document (= z) order, deleted ones included."""
+        metas = {r.str(1): r for r in self.records if _is_meta(r)}
+        out = []
+        for r in self.records:
+            if _is_meta(r):
+                continue
+            it = Item(None, r)
+            body = it.body
+            it.meta = metas.get(body.str(1)) if body is not None else None
+            out.append(it)
+        return out
+
+    def visible(self) -> list:
+        """Typed views of the items GoodNotes draws."""
+        return [i.typed() for i in self.items if not i.deleted]
+
+    def remove(self, item: Item) -> None:
+        self.records = [r for r in self.records if r is not item.meta and r is not item.payload]
+
+    def group(self, item: Item) -> list[Item]:
+        """`item` plus everything sharing its element group (a sticker's
+        image and its editable text: image body field 7 == box field 8)."""
+        gid = item.body.str(7) if item.kind == "image" else item.body.str(8) if item.kind == "box" else None
+        if not gid or not _UUID_RE.match(gid.encode()):
+            return [item]
+        return [i for i in self.items if not i.deleted and
+                ((i.kind == "image" and i.body.str(7) == gid) or (i.kind == "box" and i.body.str(8) == gid))]
+
+    def move(self, item: Item, dx: float, dy: float) -> None:
+        """Moves an item (and its element group) by (dx, dy)."""
+        for i in self.group(item):
+            i.typed().translate(dx, dy)
+
+    def append(self, item: Item) -> None:
+        self.records += [r for r in (item.meta, item.payload) if r is not None]
+
+    def __repr__(self) -> str:
+        return f"<Page {self.key!r} {self.uuid} {len(self.records)} records>"
+
+
+def _event_body(e: Msg) -> Msg | None:
+    """An event is {1: target id, N: body}; returns body (N varies by type)."""
+    for f in e.fields:
+        if f[0] != 1 and f[1] == LEN:
+            return e._parsed(f)
+    return None
+
+
+def _replace_ids(m: Msg, mapping: dict[bytes, bytes]) -> None:
+    """Rewrites every UUID-valued field found in `mapping`, recursively;
+    event ids (field 11) get fresh UUIDs so copies don't collide."""
+    for f in m.fields:
+        if f[1] != LEN:
+            continue
+        v = f[2]
+        if isinstance(v, Msg):
+            _replace_ids(v, mapping)
+        elif _UUID_RE.match(v):
+            if v.upper() in mapping:
+                f[2] = mapping[v.upper()]
+            elif f[0] == 11:
+                f[2] = new_uuid().encode()
+        elif v and not v.isascii() or (v and v[:1] in (b"\n", b"\x12", b"\x1a", b"\"")):
+            try:
+                sub = Msg.parse(v)
+            except (ValueError, IndexError):
+                continue
+            if sub.fields:
+                before = sub.encode()
+                _replace_ids(sub, mapping)
+                if sub.encode() != before:
+                    f[2] = sub
+
+
+class Document:
+    """A whole .goodnotes file. Untouched zip entries are written back
+    byte-for-byte; pages and the event log are re-encoded from their Msg
+    trees (identical bytes unless edited).
+
+    `pages` is in **document order**: sorted by each page event's key.
+    index.notes.pb is creation order, not page order (they differ in 53 of
+    206 library files; confirmed against the GoodNotes app)."""
+
+    def __init__(self, path: str):
+        with zipfile.ZipFile(path) as z:
+            self.infos = z.infolist()
+            self.files = {i.filename: z.read(i) for i in self.infos}
+        self.events = [Msg.parse(m) for m in iter_delimited(self.files.get("index.events.pb", b""))]
+        index = [Msg.parse(m) for m in iter_delimited(self.files.get("index.notes.pb", b""))]
+        layers, page_events = {}, {}
+        for e in self.events:
+            if e.sub(2) is not None and e.path(2).has(8):
+                layers[e.path(2).str(2)] = e.sub(2)
+            pe = e.sub(54)
+            if pe is not None:
+                page_events[uuid_plus(pe.str(2))] = pe
+        self.pages = []
+        for rec in index:
+            uid = rec.str(1)
+            data = self.files.get(f"notes/{uid}", b"")
+            ev = page_events.get(uid)
+            layer = layers.get(ev.path(3).str(1)) if ev is not None and ev.sub(3) is not None else None
+            self.pages.append(Page(uid, [Msg.parse(m) for m in iter_delimited(data)], ev, layer))
+        if all(p.event is not None for p in self.pages):
+            self.pages.sort(key=lambda p: p.key)
+
+    # attachments
+    @property
+    def attachments(self) -> dict[str, bytes]:
+        return {n.split("/", 1)[1]: d for n, d in self.files.items() if n.startswith("attachments/")}
+
+    @property
+    def doc_id(self) -> str | None:
+        for e in self.events:
+            if e.has(30):
+                return e.str(1)
+        return None
+
+    @property
+    def device(self) -> int:
+        for p in self.pages:
+            for r in p.records:
+                if _is_meta(r):
+                    return r.int(8)
+        if getattr(self, "_device", None) is None:
+            self._device = random.getrandbits(63)  # no ink yet: any 63-bit id
+        return self._device
+
+    def next_sequence(self) -> int:
+        """Creation counter for new items (meta field 9), continuing the
+        highest one already in the document."""
+        if getattr(self, "_seq", None) is None:
+            self._seq = max((r.int(9) for p in self.pages for r in p.records if _is_meta(r)), default=0)
+        self._seq += 1
+        return self._seq
+
+    @property
+    def title(self) -> str | None:
+        for e in reversed(self.events):
+            d = e.sub(30) or e.sub(31)
+            if d is not None and d.sub(2) is not None:
+                return d.path(2).str(1)
+        return None
+
+    @title.setter
+    def title(self, name: str) -> None:
+        for e in self.events:
+            d = e.sub(30)
+            if d is not None:
+                d.sub(2, create=True).set_bytes(1, name)
+
+    def add_attachment(self, data: bytes, attachment_id: str | None = None) -> str:
+        """Stores raw bytes and registers them the three ways GoodNotes
+        requires (zip entry, index.attachments.pb, attachment event)."""
+        aid = attachment_id or new_uuid()
+        self.files[f"attachments/{aid}"] = data
+        idx = Msg()
+        idx.set_bytes(1, aid)
+        idx.set_bytes(2, f"attachments/{aid}")
+        self.files["index.attachments.pb"] = self.files.get("index.attachments.pb", b"") + write_delimited([idx])
+        now = time.time() * 1000
+        body = Msg()
+        body.set_bytes(1, aid)
+        body.set_bytes(2, aid)
+        body.set_int(5, len(data))
+        body.set_bytes(6, self.doc_id or new_uuid())
+        body.set_double(10, now)
+        body.set_bytes(11, new_uuid())
+        body.set_bytes(12, b"")
+        body.set_int(14, self.device)
+        body.set_int(15, int(now))
+        body.set_int(16, SCHEMA_VERSION)
+        ev = Msg()
+        ev.set_bytes(1, aid)
+        ev.set_bytes(6, body)
+        self.events.append(ev)
+        return aid
+
+    # page structure
+    def _page_event_ids(self, page: Page) -> set[bytes]:
+        ids = {page.uuid.encode()}
+        if page.page_id:
+            ids.add(page.page_id.encode())
+        if page.layer is not None:
+            ids.add(page.layer.str(2).encode())
+        return ids
+
+    def _events_for(self, page: Page) -> list[Msg]:
+        ids = self._page_event_ids(page)
+        out = []
+        for e in self.events:
+            body = _event_body(e)
+            if (e.bytes(1) or b"").upper() in ids or (body is not None and (body.bytes(2) or b"").upper() in ids):
+                out.append(e)
+        return out
+
+    def add_page(self, like: Page | None = None, index: int | None = None) -> Page:
+        """New empty page with the same paper as `like` (default: last page),
+        inserted at `index` (default: end)."""
+        like = like or self.pages[-1]
+        new_pid = new_uuid()
+        mapping = {like.uuid.encode(): uuid_plus(new_pid).encode()}
+        if like.page_id:
+            mapping[like.page_id.encode()] = new_pid.encode()
+        if like.layer is not None:
+            mapping[like.layer.str(2).encode()] = new_uuid().encode()
+        copies = []
+        structural = (2, 10, 54, 102, 104)  # layer, page added, page, notes created/linked
+        for e in self._events_for(like):
+            if not any(e.has(k) for k in structural):
+                continue  # bookmarks, outline entries, rotation stay with `like`
+            c = e.copy()
+            _replace_ids(c, mapping)
+            copies.append(c)
+        self.events += copies
+        notes_id = uuid_plus(new_pid)
+        page_ev = next(_event_body(c) for c in copies if c.has(54))
+        layer_ev = next((_event_body(c) for c in copies if c.sub(2) is not None and c.path(2).has(8)), None)
+        page = Page(notes_id, [], page_ev, layer_ev)
+        idx = Msg()
+        idx.set_bytes(1, notes_id)
+        idx.set_bytes(2, f"notes/{notes_id}")
+        self.files["index.notes.pb"] = self.files.get("index.notes.pb", b"") + write_delimited([idx])
+        self.files[f"notes/{notes_id}"] = b""
+        self.pages.append(page)
+        self.move_page(page, len(self.pages) - 1 if index is None else index)
+        return page
+
+    def move_page(self, page: Page, index: int) -> None:
+        others = [p for p in self.pages if p is not page]
+        index = max(0, min(index, len(others)))
+        before = others[index - 1].key if index > 0 else None
+        after = others[index].key if index < len(others) else None
+        page.event.path(4, create=True).set_bytes(1, key_between(before, after))
+        others.insert(index, page)
+        self.pages = others
+
+    def delete_page(self, page: Page) -> None:
+        drop = set(map(id, self._events_for(page)))
+        self.events = [e for e in self.events if id(e) not in drop]
+        keep = [m for m in iter_delimited(self.files.get("index.notes.pb", b""))
+                if Msg.parse(m).str(1) != page.uuid]
+        self.files["index.notes.pb"] = write_delimited(keep)
+        self.files.pop(f"notes/{page.uuid}", None)
+        self.pages.remove(page)
+
+    def set_background(self, page: Page, data: bytes, pdf_page: int = 1,
+                       size: tuple[float, float] | None = None) -> str:
+        """Replaces a page's paper with a PDF (or image) attachment.
+        `size` resizes the page; default keeps it."""
+        aid = self.add_attachment(data)
+        layer = page.layer
+        layer.set_bytes(4, aid)
+        layer.set_int(5, pdf_page)
+        layer.remove(9)  # template name: no longer a built-in paper
+        if size is not None:
+            layer.set_bytes(8, write_point(*size))
+        return aid
+
+    # page attributes and outline (each is its own event; the last one wins)
+    def _event(self, kind: int, target: str, body: Msg, version_field: int = 15) -> Msg:
+        now = time.time() * 1000
+        body.set_double(10, now)
+        body.set_bytes(11, new_uuid())
+        body.set_int(13, self.device)
+        body.set_int(14, int(now) + random.getrandbits(8))
+        body.set_int(version_field, SCHEMA_VERSION)
+        ev = Msg()
+        ev.set_bytes(1, target)
+        ev.set_bytes(kind, body)
+        self.events.append(ev)
+        return ev
+
+    def _page_attr(self, kind: int, page: Page) -> Msg | None:
+        found = None
+        for e in self.events:
+            b = e.sub(kind) if e.has(kind) else None
+            if b is not None and b.str(2) == page.page_id:
+                found = b
+        return found
+
+    def bookmarked(self, page: Page) -> bool:
+        b = self._page_attr(57, page)
+        return b is not None and b.path(3).int(1) == 1
+
+    def set_bookmarked(self, page: Page, on: bool = True) -> None:
+        body = Msg()
+        body.set_bytes(1, self.doc_id)
+        body.set_bytes(2, page.page_id)
+        v = Msg()
+        if on:
+            v.set_int(1, 1)
+        v.set_bytes(2, stamp())
+        body.set_bytes(3, v)
+        self._event(57, page.page_id, body)
+
+    def rotation(self, page: Page) -> int:
+        """Page rotation in degrees clockwise (stored in quarter turns)."""
+        b = self._page_attr(63, page)
+        return 90 * (b.path(3).int(1) if b is not None else 0)
+
+    def set_rotation(self, page: Page, degrees: int) -> None:
+        body = Msg()
+        body.set_bytes(1, self.doc_id)
+        body.set_bytes(2, page.page_id)
+        v = Msg()
+        if degrees % 360:
+            v.set_int(1, (degrees % 360) // 90)
+        v.set_bytes(2, stamp())
+        body.set_bytes(3, v)
+        self._event(63, page.page_id, body, version_field=16)
+
+    @property
+    def outline(self) -> list[tuple[str, Page | None]]:
+        """(title, page) entries in outline order."""
+        entries = {}
+        for e in self.events:
+            b = e.sub(65) if e.has(65) else None
+            if b is not None:
+                entries[b.str(2)] = b
+        by_id = {p.page_id: p for p in self.pages}
+        rows = sorted(entries.values(), key=lambda b: b.path(4).str(1, "") if b.sub(4) else "")
+        return [(b.path(5).str(1, "") if b.sub(5) else "", by_id.get(b.str(1))) for b in rows]
+
+    def add_outline(self, title: str, page: Page) -> None:
+        last = None
+        for e in self.events:
+            b = e.sub(65) if e.has(65) else None
+            if b is not None and b.sub(4) is not None:
+                k = b.path(4).str(1, "")
+                last = k if last is None or k > last else last
+        body = Msg()
+        body.set_bytes(1, page.page_id)
+        body.set_bytes(2, new_uuid())
+        body.set_bytes(3, Msg([[2, LEN, stamp(0)]]))
+        body.set_bytes(4, Msg([[1, LEN, key_between(last, None).encode()], [2, LEN, stamp(0)]]))
+        body.set_bytes(5, Msg([[1, LEN, title.encode()], [2, LEN, stamp(0)]]))
+        body.set_bytes(6, Msg([[2, LEN, stamp(0)]]))
+        body.set_bytes(15, Msg([[1, LEN, b""], [2, LEN, stamp(0)]]))
+        body.set_bytes(17, self.doc_id)
+        ev = self._event(65, page.page_id, body, version_field=16)
+        ev.sub(65).set_int(16, 26)  # outline records carry 26, not 24
+
+    def save(self, path: str) -> None:
+        files = dict(self.files)
+        files["index.events.pb"] = write_delimited(self.events)
+        for p in self.pages:
+            files[f"notes/{p.uuid}"] = write_delimited(p.records)
+        with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
+            written = set()
+            for info in self.infos:
+                if info.filename in files:
+                    z.writestr(info, files[info.filename])
+                    written.add(info.filename)
+            for name, data in files.items():
+                if name not in written:
+                    z.writestr(name, data)
+
+
