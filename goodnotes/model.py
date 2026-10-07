@@ -1347,3 +1347,376 @@ class Document:
                     z.writestr(name, data)
 
 
+# --- building new items ------------------------------------------------------
+
+def _meta(doc: Document, item_id: str, st: Msg, version: int = SCHEMA_VERSION,
+          attachment: str | None = None) -> Msg:
+    m = Msg()
+    m.set_bytes(1, item_id)
+    m.set_bytes(2, st)
+    if attachment:
+        m.set_bytes(4, attachment)
+    m.set_int(8, doc.device)
+    m.set_int(9, doc.next_sequence())
+    m.set_int(14, DJB2_EMPTY)
+    m.set_int(16, version)
+    return m
+
+
+def new_stroke(doc: Document, commands, color=(0, 0, 0, 1), thickness: float = 1.5,
+               highlighter: bool = False) -> Item:
+    """A plain pen stroke from 'M'/'L'/'Q' commands in page units."""
+    sid, st = new_uuid(), stamp()
+    b = Msg()
+    b.set_bytes(1, sid)
+    b.set_bytes(2, b"")
+    b.set_bytes(4, write_color(color))
+    if highlighter:
+        b.set_int(5, 1)
+    b.set_bytes(6, b"")
+    b.set_bytes(7, Msg([[1, LEN, stamp()]]))
+    b.set_bytes(9, b"")
+    b.set_bytes(15, st.copy())
+    b.set_bytes(20, b"")
+    b.set_int(21, SCHEMA_VERSION)
+    payload = Msg([[7, LEN, b]])
+    item = Item(_meta(doc, sid, st), payload)
+    Stroke(item).set_path(commands, thickness)
+    return item
+
+
+VW_SCHEMA = "vA(v)A(u)A(u)A(v)A(v)A(u)A(u)A(u)A(u)A(v)"
+PENCIL_SCHEMA = "vuA(v)A(S(uuuuu))A(S(uuuuuuuuuuu))A(S(uu))A(v)A(S(uu))A(S(uuuu))A(u)"
+
+
+def _sample(commands, step: float = 3.0) -> list[tuple[float, float]]:
+    """Flattens M/L/Q commands to points about `step` apart (one subpath)."""
+    pts, cur = [], None
+    for c in commands:
+        if c[0] == "M":
+            cur = c[1]
+            pts.append(cur)
+            continue
+        ctrl, end = (((cur[0] + c[1][0]) / 2, (cur[1] + c[1][1]) / 2), c[1]) if c[0] == "L" else (c[1], c[2])
+        n = max(1, int(math.dist(cur, end) / step))
+        for i in range(1, n + 1):
+            t = i / n
+            pts.append(((1 - t) ** 2 * cur[0] + 2 * (1 - t) * t * ctrl[0] + t * t * end[0],
+                        (1 - t) ** 2 * cur[1] + 2 * (1 - t) * t * ctrl[1] + t * t * end[1]))
+        cur = end
+    return pts
+
+
+def _stroke_shell(doc: Document, color, pen: int = 0, highlighter: bool = False) -> tuple[Item, Msg]:
+    sid, st = new_uuid(), stamp()
+    b = Msg()
+    b.set_bytes(1, sid)
+    b.set_bytes(2, b"")
+    if pen:
+        b.set_int(3, pen)
+    b.set_bytes(4, write_color(color))
+    if highlighter:
+        b.set_int(5, 1)
+    b.set_bytes(6, b"")
+    b.set_bytes(7, Msg([[1, LEN, stamp()]]))
+    b.set_bytes(9, b"")
+    b.set_bytes(15, st.copy())
+    b.set_bytes(20, b"")
+    b.set_int(21, SCHEMA_VERSION)
+    return Item(_meta(doc, sid, st), Msg([[7, LEN, b]])), b
+
+
+def new_fountain_stroke(doc: Document, commands, color=(0, 0, 0, 1), width: float = 3.0,
+                        pressure=None, tape: bool = False) -> Item:
+    """KNOWN BROKEN: GoodNotes crashes on import of these. The outline
+    must be one subpath per centerline segment (true of all 4,363 such
+    strokes in a real library); this writes a single subpath.
+
+    Variable-width ink (fountain pen; tape=True draws washi tape).
+    `pressure` maps 0..1 along the stroke to a width factor (default:
+    constant). GoodNotes draws these from a precomputed outline, which is
+    generated here: offset sides joined by cubic segments, round caps."""
+    pts = _sample(commands)
+    if len(pts) < 2:
+        pts = pts + [(pts[0][0] + 0.01, pts[0][1])]
+    n = len(pts)
+    half = [width / 2 * (pressure(i / (n - 1)) if pressure else 1.0) for i in range(n)]
+    # centerline: moveTo (x, y, w) then quads (control, end) with widths
+    center_kinds, center_moves, center_quads = [0], [u32(pts[0][0]), u32(pts[0][1]), u32(half[0])], []
+    for i in range(1, n):
+        (x0, y0), (x1, y1) = pts[i - 1], pts[i]
+        center_kinds.append(1)
+        center_quads += [u32((x0 + x1) / 2), u32((y0 + y1) / 2), u32((half[i - 1] + half[i]) / 2),
+                         u32(x1), u32(y1), u32(half[i])]
+    # outline
+    def normal(i):
+        a, b = pts[max(i - 1, 0)], pts[min(i + 1, n - 1)]
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        L = math.hypot(dx, dy) or 1.0
+        return -dy / L, dx / L
+    left = [(pts[i][0] + normal(i)[0] * half[i], pts[i][1] + normal(i)[1] * half[i]) for i in range(n)]
+    right = [(pts[i][0] - normal(i)[0] * half[i], pts[i][1] - normal(i)[1] * half[i]) for i in range(n)]
+    types, moves, cubics, arcs, cw = [0], [u32(left[0][0]), u32(left[0][1])], [], [], []
+
+    def seg(a, b):
+        types.append(2)
+        cubics.extend(u32(v) for v in (a[0] + (b[0] - a[0]) / 3, a[1] + (b[1] - a[1]) / 3,
+                                       a[0] + 2 * (b[0] - a[0]) / 3, a[1] + 2 * (b[1] - a[1]) / 3, b[0], b[1]))
+
+    def cap(i, frm):
+        nx, ny = normal(i)
+        start = math.atan2(frm[1] - pts[i][1], frm[0] - pts[i][0])
+        types.append(3)
+        arcs.extend(u32(v) for v in (pts[i][0], pts[i][1], half[i], start, start + math.pi))
+        cw.append(0)
+
+    for i in range(1, n):
+        seg(left[i - 1], left[i])
+    cap(n - 1, left[-1])
+    for i in range(n - 1, 0, -1):
+        seg(right[i], right[i - 1])
+    cap(0, right[0])
+    item, b = _stroke_shell(doc, color, pen=1)
+    if tape:
+        b.set_bytes(20, Msg([[1, LEN, b""]]))
+    t = Template(VW_SCHEMA, [2, center_kinds, center_moves, center_quads, [len(types)], types,
+                              moves, [], cubics, arcs, cw])
+    b.set_bytes(2, blob_compress(t.encode()))
+    return item
+
+
+def new_pencil_stroke(doc: Document, commands, color=(0.2, 0.2, 0.2, 1), width: float = 2.0,
+                      pressure=None) -> Item:
+    """Textured pencil ink: per point (x, y, azimuth, altitude, force);
+    `pressure` maps 0..1 along the stroke to force (default 0.6)."""
+    pts = _sample(commands, 6.0)
+    n = len(pts)
+    force = [pressure(i / max(n - 1, 1)) if pressure else 0.6 for i in range(n)]
+
+    def p5(i):
+        return [u32(pts[i][0]), u32(pts[i][1]), u32(0.5), u32(1.0), u32(force[i])]
+    kinds, moves, quads = [0], [p5(0)], []
+    for i in range(1, n):
+        kinds.append(1)
+        mid = [u32((pts[i - 1][0] + pts[i][0]) / 2), u32((pts[i - 1][1] + pts[i][1]) / 2),
+               u32(0.5), u32(1.0), u32((force[i - 1] + force[i]) / 2)]
+        quads.append([random.getrandbits(32)] + mid + p5(i))  # first value: texture seed
+    item, b = _stroke_shell(doc, color, pen=5)
+    t = Template(PENCIL_SCHEMA, [1, u32(width / 2), kinds, moves, quads, [], [], [], [], []])
+    b.set_bytes(2, blob_compress(t.encode()))
+    return item
+
+
+def new_shape_stroke(doc: Document, kind: str, color=(0, 0, 0, 1), width: float = 4.68,
+                     points=None, center=None, size=None, angle: float = 0.0) -> Item:
+    """Shape-tool ink: kind 'line'/'polyline' (points), 'rect' (center,
+    size), 'ellipse' (center, radii=size, angle)."""
+    item, b = _stroke_shell(doc, color)
+    b.set_bytes(2, blob_compress(Template(PSTROKE, [2, u32(width / 2), [], [], [], 1, []]).encode()))
+    d = Msg()
+    if kind in ("line", "polyline"):
+        d.set_bytes(1, Msg([[1, LEN, write_point(*p)] for p in points]))
+    elif kind == "rect":
+        d.set_bytes(3, Msg([[1, LEN, write_point(*center)], [2, LEN, write_point(*size)]]))
+    elif kind == "ellipse":
+        e = Msg([[1, LEN, write_point(*center)], [2, LEN, write_point(*size)]])
+        if angle:
+            e.set_float(3, angle)
+        d.set_bytes(4, e)
+    else:
+        raise ValueError(kind)
+    d.set_bytes(5, Msg([[2, VARINT, 1]]))
+    d.set_float(15, width)
+    b.set_bytes(9, d)
+    return item
+
+
+_RICH_ATTR_FALLBACK = -404  # "inherit" sentinel used in char attrs
+
+
+def rich_text(text: str, color=(0.118, 0.106, 0.106, 1), font: str | None = None,
+              size: float | None = None, bold: bool = False, italic: bool = False,
+              link: str | None = None) -> RichText:
+    """One run of formatted text. `link` is a URL, or page_link(doc, page)
+    for a link to a page."""
+    run = Msg()
+    run.set_bytes(1, text)
+    a = Msg()
+    a.set_bytes(3, write_color(color))
+    if link:
+        a.set_bytes(4, link)
+    if font:
+        a.set_bytes(30, font)
+    a.set_float(40, size if size is not None else _RICH_ATTR_FALLBACK)
+    if italic:
+        a.set_int(50, 1)
+    a.set_int(60, -30 if bold else _RICH_ATTR_FALLBACK)
+    a.set_float(70, _RICH_ATTR_FALLBACK)
+    run.set_bytes(2, a)
+    p = Msg()
+    p.set_bytes(1, Msg([[1, LEN, b""]]))
+    p.set_bytes(2, Msg([[1, VARINT, (1 << 64) - 1]]))
+    p.set_bytes(3, Msg([[1, VARINT, (1 << 64) - 1], [2, VARINT, (1 << 64) - 1]]))
+    run.set_bytes(3, p)
+    return RichText(Msg([[1, LEN, run]]))
+
+
+def _default_text_attrs(font="Helvetica Neue", size=24.0) -> Msg:
+    a = Msg()
+    a.set_bytes(3, Msg([[4, I32, struct.pack("<f", 1.0)]]))
+    a.set_bytes(30, font)
+    a.set_float(40, size)
+    a.set_int(60, -60)
+    a.set_float(70, -20.0)
+    p = Msg()
+    p.set_bytes(1, Msg([[1, LEN, b""]]))
+    p.set_bytes(2, b"")
+    p.set_bytes(3, Msg([[1, VARINT, (1 << 64) - 1], [2, VARINT, (1 << 64) - 1]]))
+    return Msg([[1, LEN, a], [2, LEN, p]])
+
+
+BOX_VERSION = 35
+
+
+def new_box(doc: Document, origin, size, text: RichText | None = None, fill=None,
+            outline=None, corner_radius: float | None = None,
+            vertices: list[tuple[float, float]] | None = None, ellipse: bool = False,
+            font="Helvetica Neue", font_size=24.0) -> Item:
+    """A shape and/or text box: a rectangle (optional corner radius; a
+    radius >= half the height makes a pill), an ellipse, or a polygon from
+    `vertices` in the unit square (0..1). fill/outline None = none;
+    outline = (width, rgba)."""
+    bid, st = new_uuid(), stamp()
+    b = Msg()
+    b.set_bytes(1, bid)
+    b.set_int(2, BOX_VERSION)
+    b.set_bytes(3, st.copy())
+    b.set_bytes(7, Msg([[1, LEN, stamp()]]))
+    b.set_bytes(20, Msg([[1, LEN, write_point(*origin)], [3, I32, struct.pack("<f", 1.0)]]))
+    dims = write_point(*size)
+    dims.set_float(3, float("inf"))
+    b.set_bytes(21, Msg([[2, LEN, dims]]))
+    geo = Msg()
+    if ellipse:
+        geo.set_bytes(2, b"")
+    elif vertices:
+        poly = Msg()
+        for x, y in vertices:
+            v = Msg()
+            v.set_bytes(1, write_point(x, y))
+            v.set_int(2, 1)
+            poly.add(1, LEN, v)
+        poly.set_int(2, 1)
+        geo.set_bytes(3, Msg([[1, LEN, poly]]))
+    elif corner_radius:
+        geo.set_bytes(1, Msg([[1, I32, struct.pack("<f", corner_radius)]]))
+    else:
+        geo.set_bytes(1, b"")
+    b.set_bytes(22, geo)
+    fill_msg = Msg([[1, LEN, Msg([[1, LEN, write_color(fill)]]) if fill else b""]])
+    b.set_bytes(30, fill_msg)
+    if outline:
+        o = _stroke_style(outline[0], outline[1], outline[2] if len(outline) > 2 else None)
+    else:
+        o = Msg([[2, LEN, Msg([[1, LEN, b""]])]])
+    b.set_bytes(31, o)
+    t = Msg()
+    t.set_bytes(5, _default_text_attrs(font, font_size))
+    t.set_bytes(10, Msg([[i, I32, struct.pack("<f", 10.0)] for i in (1, 2, 3, 4)]))
+    b.set_bytes(32, t)
+    item = Item(_meta(doc, bid, st, BOX_VERSION), Msg([[21, LEN, b]]))
+    Box(item).text = text if text is not None else RichText(Msg.parse(_EMPTY_TEXT))
+    t.fields.sort(key=lambda f: f[0])
+    return item
+
+
+ARROW_NONE, ARROW_OPEN, ARROW_FILLED = 0, 1, 2
+DASHED, DOTTED = (3.0, 4.0), (0.0, 2.0)  # dash patterns, in multiples of line width
+
+
+def new_line(doc: Document, start, end, mid=None, color=(0, 0, 0, 1),
+             width: float = 3.0, arrow: int = ARROW_OPEN, elbow: bool = False,
+             start_arrow: int = ARROW_NONE, dash: tuple[float, float] | None = None) -> Item:
+    """A line (curved through `mid` if given) or, with elbow=True, an
+    elbow connector. arrow/start_arrow: ARROW_NONE/OPEN/FILLED."""
+    lid, st = new_uuid(), stamp()
+    b = Msg()
+    b.set_bytes(1, lid)
+    b.set_int(2, 31)
+    b.set_bytes(3, st.copy())
+    b.set_bytes(7, Msg([[1, LEN, stamp()]]))
+    mid = mid or ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
+    g = Msg()
+    g.set_bytes(1, Msg([[1, LEN, write_point(*start)]]))
+    if elbow:
+        g.set_bytes(3, Msg([[1, LEN, write_point(*end)]]))
+        g.set_bytes(5, Msg([[2, LEN, write_point(*mid)]]))
+        b.set_bytes(21, g)
+    else:
+        g.set_bytes(2, write_point(*mid))
+        g.set_bytes(3, Msg([[1, LEN, write_point(*end)]]))
+        b.set_bytes(20, g)
+    if start_arrow:
+        b.set_int(30, start_arrow)
+    if arrow:
+        b.set_int(31, int(arrow))
+    b.set_bytes(32, _stroke_style(width, color, dash))
+    return Item(_meta(doc, lid, st, 31), Msg([[22, LEN, b]]))
+
+
+def _stroke_style(width, color, dash=None) -> Msg:
+    """{1 width, 2 {1 solid | 2 {1 dash, 2 gap}}, 3 {1 color}}."""
+    s = Msg()
+    s.set_float(1, width)
+    if dash:
+        pat = Msg()
+        if dash[0]:
+            pat.set_float(1, dash[0])
+        pat.set_float(2, dash[1])
+        s.set_bytes(2, Msg([[2, LEN, pat]]))
+    else:
+        s.set_bytes(2, Msg([[1, LEN, b""]]))
+    s.set_bytes(3, Msg([[1, LEN, write_color(color)]]))
+    return s
+
+
+def new_image(doc: Document, data: bytes, center, size, angle: float = 0.0) -> Item:
+    """Registers `data` as an attachment and places it."""
+    aid = doc.add_attachment(data)
+    iid, st = new_uuid(), stamp(6)
+    b = Msg()
+    b.set_bytes(1, iid)
+    b.set_bytes(4, aid)
+    b.set_bytes(5, Msg([[1, LEN, stamp()]]))
+    b.set_int(6, 1)
+    b.set_bytes(15, st.copy())
+    b.set_int(18, SCHEMA_VERSION)
+    item = Item(_meta(doc, iid, st, attachment=aid), Msg([[1, LEN, b]]))
+    Image(item).place(center, size, angle)
+    # keep GoodNotes' field order: 1, 2, 3, 4, ...
+    b.fields.sort(key=lambda f: f[0])
+    return item
+
+
+def new_sticky(doc: Document, origin, size=(256.0, 256.0), text: RichText | None = None,
+               color=(0.980, 0.906, 0.471, 1.0)) -> Item:
+    sid, st = new_uuid(), stamp(4)
+    b = Msg()
+    b.set_bytes(1, sid)
+    b.set_int(2, BOX_VERSION)
+    b.set_bytes(3, st.copy())
+    b.set_bytes(7, Msg([[1, LEN, stamp()]]))
+    b.set_bytes(20, Msg([[1, LEN, write_point(*origin)], [3, I32, struct.pack("<f", 1.0)]]))
+    dims = write_point(*size)
+    dims.set_float(3, float("inf"))
+    b.set_bytes(21, Msg([[2, LEN, dims]]))
+    b.set_bytes(30, write_color(color))
+    t = Msg()
+    t.set_bytes(5, _default_text_attrs())
+    b.set_bytes(31, t)
+    b.set_int(40, 1)
+    b.set_int(41, 1)
+    item = Item(_meta(doc, sid, st, BOX_VERSION), Msg([[20, LEN, b]]))
+    if text is not None:
+        Sticky(item).text = text
+    return item
