@@ -263,3 +263,187 @@ def write_delimited(msgs) -> bytes:
     return bytes(out)
 
 
+# --- bv41 blobs ------------------------------------------------------------
+
+BV_MAGIC, BV_END = b"bv41", b"bv4$"
+
+
+BV_BLOCK = 32768  # GoodNotes splits bodies into blocks of at most this many raw bytes
+
+
+def blob_decompress(blob: bytes) -> bytes:
+    """bv41 container: one or more [b"bv41", raw size, payload size, LZ4
+    block] chunks, then b"bv4$". Bodies over 32 KiB span several chunks."""
+    out, pos = bytearray(), 0
+    while blob[pos:pos + 4] == BV_MAGIC:
+        raw, size = struct.unpack_from("<II", blob, pos + 4)
+        out += decompress_block(blob[pos + 12:pos + 12 + size], expected_size=raw)
+        pos += 12 + size
+    if blob[pos:pos + 4] != BV_END or pos == 0:
+        raise ValueError("malformed bv41 blob")
+    return bytes(out)
+
+
+def _lz4_literals(raw: bytes) -> bytes:
+    """A valid LZ4 block that stores `raw` as one literal run."""
+    n = len(raw)
+    if n < 15:
+        return bytes([n << 4]) + raw
+    rest = n - 15
+    return b"\xf0" + b"\xff" * (rest // 255) + bytes([rest % 255]) + raw
+
+
+def blob_compress(body: bytes) -> bytes:
+    out = bytearray()
+    for i in range(0, max(len(body), 1), BV_BLOCK):
+        chunk = body[i:i + BV_BLOCK]
+        payload = _lz4_literals(chunk)
+        out += BV_MAGIC + struct.pack("<II", len(chunk), len(payload)) + payload
+    return bytes(out) + BV_END
+
+
+# --- schema-driven templates ("tpl" bodies) ----------------------------------
+
+def _parse_schema(s: str, i: int = 0):
+    """'vuA(v)S(uu)' -> ['v', 'u', ('A', [...]), ('S', [...])]."""
+    out = []
+    while i < len(s) and s[i] != ")":
+        c = s[i]
+        if c in "AS":
+            inner, i = _parse_schema(s, i + 2)  # skip 'A('
+            out.append((c, inner))
+            i += 1  # ')'
+        else:
+            out.append(c)
+            i += 1
+    return out, i
+
+
+_SIZE = {"v": ("<H", 2), "u": ("<I", 4), "f": ("<f", 4)}
+
+
+def _read_values(spec, buf, pos):
+    vals = []
+    for t in spec:
+        if isinstance(t, tuple):
+            kind, inner = t
+            if kind == "S":
+                v, pos = _read_values(inner, buf, pos)
+                vals.append(v)
+            else:
+                (n,) = struct.unpack_from("<I", buf, pos)
+                pos += 4
+                arr = []
+                for _ in range(n):
+                    v, pos = _read_values(inner, buf, pos)
+                    arr.append(v[0] if len(inner) == 1 else v)
+                vals.append(arr)
+        else:
+            fmt, size = _SIZE[t]
+            vals.append(struct.unpack_from(fmt, buf, pos)[0])
+            pos += size
+    return vals, pos
+
+
+def _write_values(spec, vals, out):
+    for t, v in zip(spec, vals):
+        if isinstance(t, tuple):
+            kind, inner = t
+            if kind == "S":
+                _write_values(inner, v, out)
+            else:
+                out += struct.pack("<I", len(v))
+                for e in v:
+                    _write_values(inner, [e] if len(inner) == 1 else e, out)
+        else:
+            out += struct.pack(_SIZE[t][0], v)
+
+
+class Template:
+    """A decoded 'tpl' body: schema string + nested value lists.
+
+    `u` values stay uint32 bit patterns (lossless); use f32()/u32() to view
+    or store them as floats. `extra` keeps any trailing bytes the schema
+    doesn't account for (seen on ~0.04% of real strokes).
+    """
+
+    def __init__(self, schema: str, values: list, extra: bytes = b""):
+        self.schema, self.values, self.extra = schema, values, extra
+
+    @classmethod
+    def parse(cls, body: bytes) -> "Template":
+        if body[:4] != b"tpl\0":
+            raise ValueError("not a template body")
+        end = body.index(b"\0", 8)
+        schema = body[8:end].decode("ascii")
+        spec, _ = _parse_schema(schema)
+        values, pos = _read_values(spec, body, end + 1)
+        return cls(schema, values, body[pos:])
+
+    def encode(self) -> bytes:
+        spec, _ = _parse_schema(self.schema)
+        vals = bytearray()
+        _write_values(spec, self.values, vals)
+        schema = self.schema.encode() + b"\0"
+        size = 8 + len(schema) + len(vals) + len(self.extra)
+        return b"tpl\0" + struct.pack("<I", size) + schema + bytes(vals) + self.extra
+
+
+def f32(bits: int) -> float:
+    return struct.unpack("<f", struct.pack("<I", bits))[0]
+
+
+def u32(x: float) -> int:
+    return struct.unpack("<I", struct.pack("<f", x))[0]
+
+
+# --- small helpers ---------------------------------------------------------
+
+def new_uuid() -> str:
+    return str(uuidlib.uuid4()).upper()
+
+
+def stamp(counter: int = 1) -> Msg:
+    """{1: edit counter, 2: random tag} — the CRDT version GoodNotes writes
+    beside most values."""
+    m = Msg()
+    if counter:
+        m.set_int(1, counter)
+    m.set_int(2, random.getrandbits(32))
+    return m
+
+
+def read_color(m: Msg | None, default=(0.0, 0.0, 0.0, 1.0)) -> tuple:
+    """RGBA from {1 r, 2 g, 3 b, 4 a}. Proto3 drops zero fields, so a
+    missing channel is 0 — including alpha, though GoodNotes always writes
+    alpha when it is nonzero."""
+    if m is None:
+        return default
+    return tuple(m.float(i) for i in (1, 2, 3, 4))
+
+
+def write_color(rgba) -> Msg:
+    m = Msg()
+    for i, c in enumerate(rgba if len(rgba) == 4 else (*rgba, 1.0), 1):
+        if c:
+            m.set_float(i, c)
+    return m
+
+
+def read_point(m: Msg | None) -> tuple[float, float]:
+    return (m.float(1), m.float(2)) if m is not None else (0.0, 0.0)
+
+
+def write_point(x: float, y: float) -> Msg:
+    m = Msg()
+    if x:
+        m.set_float(1, x)
+    if y:
+        m.set_float(2, y)
+    return m
+
+
+SCHEMA_VERSION = 24  # stamped on every record GoodNotes writes (field 16/18/21/...)
+DJB2_EMPTY = 5381
+
+
