@@ -104,7 +104,7 @@ if command -v git >/dev/null && git -C "$SRC" init -q 2>/dev/null; then
     && git checkout -q -b "$BRANCH" FETCH_HEAD 2>/dev/null \
     && git add reports \
     && git -c user.name="import-test" -c user.email="import-test@localhost" commit -q -m "Add GoodNotes import test report" \
-    && git push -q origin "$BRANCH" 2>/dev/null && sent=1
+    && GIT_TERMINAL_PROMPT=0 git push -q origin "$BRANCH" 2>/dev/null && sent=1
 fi
 if [ "$sent" = 1 ]; then
   say "Report pushed to $REPO@$BRANCH (reports/). Claude's session picks it up from there."
