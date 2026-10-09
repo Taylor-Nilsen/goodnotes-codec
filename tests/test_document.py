@@ -3,13 +3,13 @@ import tempfile
 import unittest
 
 from goodnotes.model import Document, key_between, uuid_plus
-from tests import synthetic
+from tests import fake_document
 
 
 class DocumentTest(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
-        self.path = synthetic.make(os.path.join(self.dir.name, "s.goodnotes"), pages=2)
+        self.path = fake_document.make(os.path.join(self.dir.name, "s.goodnotes"), pages=2)
 
     def tearDown(self):
         self.dir.cleanup()
