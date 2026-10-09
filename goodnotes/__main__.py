@@ -132,21 +132,36 @@ def make_testkit(directory, only=None) -> list[str]:
         p.append(new_math(d, r"x^2 + y^2 = r^2", png(120, 40, (0, 0, 0)), (500, 500), (240, 80)))
     kits["07_images_sticker_math"] = images
 
-    def document(d):
+    def pages_pdf(d):
         p0 = d.pages[0]
         p1 = d.add_page()
-        p2 = d.add_page()
-        d.set_bookmarked(p1)
-        d.set_rotation(p2, 90)
-        d.set_labels(p1, ["todo"])
-        top = d.add_outline("Chapter 1", p0)
-        d.add_outline("Section 1.1", p1, parent=top)
-        d.add_comment(p0, (200, 200), "a comment", author="Taylor")
-        d.favourite = True
+        d.add_page()
         p0.append(new_stroke(d, wave, (0, 0, 0, 1), 2))
         p1.append(new_stroke(d, wave, (0, 0, 1, 1), 2))
         d.import_pdf(paper_pdf((600, 800), "dotted", 24))
-    kits["08_pages_outline_bookmark_comment_pdf"] = document
+    kits["08a_pages_pdf_import"] = pages_pdf
+
+    def page_flags(d):
+        p1 = d.add_page()
+        d.set_bookmarked(p1)
+        d.set_rotation(p1, 90)
+        d.favourite = True
+    kits["08b_bookmark_rotation_favourite"] = page_flags
+
+    def labels(d):
+        d.set_labels(d.pages[0], ["todo"])
+        d.set_read(d.pages[0])
+    kits["08c_labels_read"] = labels
+
+    def outline(d):
+        p1 = d.add_page()
+        top = d.add_outline("Chapter 1", d.pages[0])
+        d.add_outline("Section 1.1", p1, parent=top)
+    kits["08d_outline"] = outline
+
+    def comment(d):
+        d.add_comment(d.pages[0], (200, 200), "a comment", author="Taylor")
+    kits["08e_comment"] = comment
 
     def erase(d):
         p = d.pages[0]
@@ -164,7 +179,11 @@ def make_testkit(directory, only=None) -> list[str]:
 
     def audio(d):
         d.add_audio_note(_silent_wav(2.0), 2.0, page=d.pages[0], name="Test recording", offsets=[0.0, 1.0])
-    kits["10_audio_note"] = audio
+    kits["10a_audio_note_with_page_refs"] = audio
+
+    def audio_plain(d):
+        d.add_audio_note(_silent_wav(2.0), 2.0)
+    kits["10b_audio_note_plain"] = audio_plain
 
     def wrap_variants(d):
         """Which sizing wraps a long line: each box says which variant it is."""

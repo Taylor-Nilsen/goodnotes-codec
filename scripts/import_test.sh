@@ -97,12 +97,12 @@ cat "$REPORT"
 
 # Send it back: a push to the PR branch reaches the Claude session watching it.
 sent=0
-if command -v git >/dev/null && git -C "$SRC" init -q 2>/dev/null; then
-  cd "$SRC"
-  mkdir -p reports && cp "$REPORT" "reports/import-report-$(date -u '+%Y%m%d-%H%M%S').txt"
-  git remote add origin "https://github.com/$REPO.git" 2>/dev/null
-  git fetch -q --depth 1 origin "$BRANCH" 2>/dev/null \
-    && git checkout -q -b "$BRANCH" FETCH_HEAD 2>/dev/null \
+if command -v git >/dev/null; then
+  mkdir -p "$WORK/repo" && cd "$WORK/repo" && git init -q \
+    && git remote add origin "https://github.com/$REPO.git" \
+    && GIT_TERMINAL_PROMPT=0 git fetch -q --depth 1 origin "$BRANCH" 2>/dev/null \
+    && git checkout -q -b "$BRANCH" FETCH_HEAD \
+    && mkdir -p reports && cp "$REPORT" "reports/import-report-$(date -u '+%Y%m%d-%H%M%S').txt" \
     && git add reports \
     && git -c user.name="import-test" -c user.email="import-test@localhost" commit -q -m "Add GoodNotes import test report" \
     && GIT_TERMINAL_PROMPT=0 git push -q origin "$BRANCH" 2>/dev/null && sent=1
