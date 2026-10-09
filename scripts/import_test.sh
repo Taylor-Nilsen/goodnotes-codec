@@ -4,6 +4,7 @@
 # lines and crash reports after each import, and reports back.
 #
 #   curl -fsSL https://raw.githubusercontent.com/Taylor-Nilsen/goodnotes-codec/feat/full-format/scripts/import_test.sh | bash
+#   KIT_ONLY=11,12 curl ... | bash      only the kit files whose names start with 11 or 12
 #
 # Installs nothing. Everything happens in a temporary folder that is deleted
 # on exit. Uses only what macOS ships: bash, curl, tar, python3, open, log,
@@ -27,7 +28,7 @@ cd "$WORK"/goodnotes-codec-* || exit 1
 SRC="$PWD"
 
 say "Building the test kit"
-python3 -m goodnotes testkit "$WORK/kit" || { echo "building the kit failed"; exit 1; }
+python3 -m goodnotes testkit "$WORK/kit" ${KIT_ONLY:+--only "$KIT_ONLY"} || { echo "building the kit failed"; exit 1; }
 
 REPORT="$WORK/import-report.txt"
 {

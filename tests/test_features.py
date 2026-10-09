@@ -14,7 +14,7 @@ from goodnotes.model import (A4, ARROW_FILLED, DASHED, Box, Document, Image, Lin
                              Stroke, TextRun, Template, blob_decompress, new_box, new_brush_stroke,
                              new_fountain_stroke, new_image, new_line, new_math, new_pencil_stroke,
                              new_shape_stroke, new_sticky, new_stroke, new_tape, new_text_box,
-                             paper_pdf, pdf_pages, rich_text, uuid_plus)
+                             paper_pdf, pdf_pages, read_point, rich_text, uuid_plus)
 
 
 def png(w=4, h=3, rgb=(255, 0, 0)):
@@ -210,13 +210,17 @@ class ItemsTest(unittest.TestCase):
             self.assertEqual(box.sizing, "auto")
             self.assertEqual(box.b.path(21, 3).float(2), 400.0)
             spans = box.text.spans()
-            self.assertEqual([s.text for s in spans], [r.text for r in runs])
+            self.assertEqual(box.text.text, "".join(r.text for r in runs))
             self.assertEqual((spans[0].heading, spans[0].align, spans[0].bold), (1, "center", True))
             self.assertEqual((spans[2].link, spans[2].underline), ("https://example.com", True))
             self.assertEqual((spans[3].strike, spans[3].italic, spans[3].highlight[:3]), (True, True, (1.0, 1.0, 0.0)))
-            self.assertEqual((spans[4].list_style, spans[4].indent, spans[4].line_height, spans[4].font, spans[4].size),
-                             ("bullet", 1, 1.5, "Courier", 14.0))
+            # the newline that ends paragraph 2 keeps paragraph 2's attributes; "item one" starts a bulleted one
+            self.assertEqual(spans[4].text, "\n")
+            self.assertIsNone(spans[4].list_style)
+            self.assertEqual((spans[5].text, spans[5].list_style, spans[5].indent, spans[5].line_height, spans[5].font, spans[5].size),
+                             ("item one", "bullet", 1, 1.5, "Courier", 14.0))
             self.assertEqual(len(box.text.paragraphs()), 3)
+            self.assertGreater(read_point(box.b.path(32, 2))[1], 0)  # measured size stored for wrapping
             rt2 = box.text
             rt2.set_style(bold=True)
             box.text = rt2

@@ -47,7 +47,7 @@ def _info(doc: Document) -> str:
     return "\n".join(out)
 
 
-def make_testkit(directory) -> list[str]:
+def make_testkit(directory, only=None) -> list[str]:
     """Writes one small document per feature group into `directory`, so an
     import failure in GoodNotes points at one group. Returns the paths."""
     import math
@@ -166,8 +166,38 @@ def make_testkit(directory) -> list[str]:
         d.add_audio_note(_silent_wav(2.0), 2.0, page=d.pages[0], name="Test recording", offsets=[0.0, 1.0])
     kits["10_audio_note"] = audio
 
+    def wrap_variants(d):
+        """Which sizing wraps a long line: each box says which variant it is."""
+        from .model import Box, Msg, LEN, write_point
+        long = " a long line of text that must wrap inside the box instead of running off the right edge of the page."
+        p = d.pages[0]
+        y = 60
+        for label, strategy, measured in (("A", "auto", True), ("B", "fixed-auto-height", True),
+                                          ("C", "fixed-auto-height", False), ("D", "auto", False)):
+            it = new_text_box(d, (60, y), f"{label}:{long}", max_width=500)
+            b = Box(it)
+            if strategy == "fixed-auto-height":
+                dims = write_point(500, 40)
+                dims.set_float(3, float("inf"))
+                it.body.set_bytes(21, Msg([[2, LEN, dims]]))
+            if not measured:
+                it.body.sub(32).remove(2)
+            p.append(it)
+            y += 220
+    kits["11_text_wrap_variants"] = wrap_variants
+
+    def pencil_variants(d):
+        p = d.pages[0]
+        p.append(new_pencil_stroke(d, wave))                                   # GoodNotes defaults
+        p.append(new_pencil_stroke(d, shifted(120), width=6))
+        p.append(new_pencil_stroke(d, shifted(240), pressure=lambda t: 0.6))   # old default force
+        p.append(new_pencil_stroke(d, shifted(360), pressure=lambda t: t))
+    kits["12_pencil_variants"] = pencil_variants
+
     paths = []
     for name, build in kits.items():
+        if only and not any(name.startswith(o) for o in only):
+            continue
         doc = Document.new(name, paper="lined")
         build(doc)
         path = out / f"{name}.goodnotes"
@@ -219,6 +249,7 @@ def main(argv=None):
     p.add_argument("--pen", default="ballpoint")
     p = sp.add_parser("testkit")
     p.add_argument("dir")
+    p.add_argument("--only", default=None, help="comma-separated name prefixes, e.g. 11,12")
     p = sp.add_parser("dump")
     p.add_argument("doc")
     p.add_argument("--events", action="store_true")
@@ -256,7 +287,7 @@ def main(argv=None):
             page.append(it)
         doc.save(a.out)
     elif a.cmd == "testkit":
-        for name in make_testkit(a.dir):
+        for name in make_testkit(a.dir, a.only.split(",") if a.only else None):
             print(name)
     elif a.cmd == "dump":
         doc = Document(a.doc)

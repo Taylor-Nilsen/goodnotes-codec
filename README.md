@@ -85,25 +85,28 @@ is clipped, not wrapped.
 
 ## Status
 
-Everything reads and writes; "in GoodNotes" says what has been confirmed by
-importing a generated file into the app.
+Everything reads and writes. "In GoodNotes" is what a round trip through the
+macOS app confirmed: the generated test kit (`python -m goodnotes testkit`)
+was imported, re-exported, and diffed against the originals, and GoodNotes'
+own page renderings were checked.
 
 | Feature | Read | Write | In GoodNotes |
 |---|---|---|---|
-| Ballpoint ink, highlighter, dashed ink | ✅ | ✅ | ✅ |
-| Fountain pen, brush, marker/tape (variable width) | ✅ | ✅ | rewritten to match real strokes (one outline per segment); import not yet re-checked |
-| Pencil, shape-tool strokes, filled shapes | ✅ | ✅ | pencil/shape not yet checked |
-| Eraser (split ink), lasso move, group, z-order, duplicate, delete | ✅ | ✅ | — |
-| Shapes: rect/rounded/ellipse/polygon, fill, outline, dashes, rotation, shadow, lock | ✅ | ✅ | ✅ (rotation/shadow/lock not yet checked) |
-| Text boxes (auto-wrap), rich text: font, size, color, bold, italic, underline, strike, link, highlight, lists, headings, alignment, line height | ✅ | ✅ | basic text ✅; decorations/lists not yet checked |
+| New document from scratch (`Document.new`) | — | ✅ | ✅ imports; GoodNotes keeps every item |
+| Ballpoint ink, highlighter, dashed ink, shape-tool strokes | ✅ | ✅ | ✅ |
+| Fountain pen, brush, marker/tape (variable width, pressure) | ✅ | ✅ | ✅ kept byte-for-byte, renders with pressure |
+| Pencil | ✅ | ✅ | ⚠️ imports; rendered very faint with the old defaults, now written like GoodNotes' own (re-check pending) |
+| Eraser (split ink), lasso move, group, z-order, duplicate, delete | ✅ | ✅ | ✅ |
+| Shapes: rect/rounded/ellipse/polygon, fill, outline, dashes, rotation, shadow, lock, filled shapes | ✅ | ✅ | ✅ |
+| Rich text: font, size, color, bold, italic, underline, strike, link, highlight, lists, headings, alignment | ✅ | ✅ | ✅ all attributes render |
+| Text boxes that wrap | ✅ | ✅ | ⚠️ measured size now stored (`11_text_wrap_variants` in the kit tells which strategy wraps; re-check pending) |
 | Sticky notes (author, expanded) | ✅ | ✅ | ✅ |
 | Lines, curves, elbow connectors, arrowheads, dashes | ✅ | ✅ | ✅ |
-| Images (placed, rotated, locked), stickers, elements | ✅ | ✅ | ✅ |
-| Math conversions (LaTeX + image) | ✅ | ✅ | not yet checked |
-| Pages: add/insert/move/delete/duplicate, paper, PDF background, PDF/image import | ✅ | ✅ | ✅ |
-| Bookmarks, rotation, labels, read flag, outline (nested) | ✅ | ✅ | bookmarks/rotation ✅ |
-| Audio notes with page references, transcripts | ✅ | ✅ | not yet checked |
-| Comments (threads, replies, resolve) | ✅ | ✅ | not yet checked |
-| New document from scratch (`Document.new`) | — | ✅ | layout matches a real export; import not yet re-checked |
+| Images (placed, rotated, locked), PDF stickers | ✅ | ✅ | ✅ |
+| Math conversions (LaTeX + image) | ✅ | ✅ | ⚠️ imports and the record survives, but GoodNotes does not draw it |
+| Pages: add/insert/move/delete/duplicate, paper, PDF background, PDF/image import | ✅ | ✅ | ✅ (kit 08 not yet re-exported) |
+| Bookmarks, rotation, labels, read flag, outline (nested) | ✅ | ✅ | bookmarks/rotation ✅; rest not yet checked |
+| Audio notes with page references, transcripts | ✅ | ✅ | not yet checked (kit 10) |
+| Comments (threads, replies, resolve) | ✅ | ✅ | not yet checked (kit 08) |
 | Legacy text boxes, Text Docs (Yjs), graph widgets | ✅ | round-trip | — |
 | SVG export/import, vector PDF export | ✅ | ✅ | — |

@@ -1007,7 +1007,35 @@ class RichText:
 
     @classmethod
     def build(cls, runs: list[TextRun]) -> "RichText":
-        return cls(Msg([[1, LEN, r.to_msg()] for r in runs]))
+        """Builds attributed text. Paragraph attributes (align, list style,
+        heading, ...) are taken from the first run of each paragraph and
+        applied to every character of it, including the newline that ends
+        it, which is how GoodNotes reads them; a run that starts with a
+        newline therefore styles the paragraph *after* the newline."""
+        pieces = []  # (text, run) with paragraph attrs normalized
+        para_attrs = None
+        for r in runs:
+            parts = r.text.split("\n")
+            for i, part in enumerate(parts):
+                if i:
+                    pieces.append(("\n", r, para_attrs if para_attrs is not None else r))
+                    para_attrs = None
+                if part:
+                    if para_attrs is None:
+                        para_attrs = r
+                    pieces.append((part, r, para_attrs))
+        out = []
+        for text, r, pa in pieces:
+            run = TextRun.__new__(TextRun)
+            run.__dict__.update(r.__dict__)
+            run.text = text
+            for k in ("align", "list_style", "heading", "line_height", "indent", "space_after", "space_before"):
+                setattr(run, k, getattr(pa, k))
+            if out and out[-1].__dict__ | {"text": None} == run.__dict__ | {"text": None}:
+                out[-1].text += text
+            else:
+                out.append(run)
+        return cls(Msg([[1, LEN, r.to_msg()] for r in out]))
 
     @property
     def runs(self) -> list[Msg]:
@@ -1268,7 +1296,27 @@ class Box(_Rect):
     @text.setter
     def text(self, rt: RichText):
         self._set_text_msg(32, rt)
-        self.b.sub(32).remove(2)  # measured text size; GoodNotes re-measures
+        self.measure()
+
+    def measure(self) -> None:
+        """Stores the text's laid-out size (container field 2) for the
+        box's wrap width: the box's max width for an auto-sizing text box,
+        its width otherwise, minus padding. GoodNotes wraps and renders at
+        this size (and re-measures when the text is edited)."""
+        t = self.b.sub(32)
+        rt = self.text
+        if t is None or rt is None:
+            return
+        s = self.b.sub(21)
+        auto = s.sub(3) if s is not None else None
+        width = auto.float(2) if auto is not None else self.size[0]
+        if not (0 < width < float("inf")):
+            width = self.size[0] or 700.0
+        attrs = t.path(5, 1)
+        default = attrs.float(40) if attrs is not None and attrs.float(40) > 0 else 24.0
+        w, h = estimate_text_size(rt, width - 2 * self.padding, default)
+        t.set_bytes(2, write_point(w, h))
+        t.fields.sort(key=lambda f: f[0])
 
     @property
     def padding(self) -> float:
@@ -1308,6 +1356,30 @@ class Box(_Rect):
         geo = self.b.sub(22, create=True)
         geo.fields = []
         geo.set_bytes(2, b"")
+
+
+def estimate_text_size(rt: "RichText", width: float, default_size: float = 24.0) -> tuple[float, float]:
+    """(width, height) of rich text wrapped at `width` page units, with an
+    average glyph width of 0.5 em and 1.2 em line height."""
+    max_w, height = 0.0, 0.0
+    for para in rt.paragraphs():
+        first = para[0] if para else None
+        size = max((r.size or default_size for r in para), default=default_size)
+        lines, cur = [], 0.0
+        for r in para:
+            em = 0.5 * (r.size or default_size)
+            for word in re.split(r"(\s+)", r.text):
+                if not word:
+                    continue
+                ww = em * len(word)
+                if cur and cur + ww > width and not word.isspace():
+                    lines.append(cur)
+                    cur = 0.0
+                cur += ww
+        lines.append(cur)
+        max_w = max(max_w, max(lines))
+        height += len(lines) * size * (first.line_height if first and first.line_height else 1.2)
+    return (min(max_w, width), height)
 
 
 def _polygon(vertices, closed=True) -> Msg:
@@ -3025,21 +3097,23 @@ def new_brush_stroke(doc: Document, commands, color=(0, 0, 0, 1), width: float =
     return item
 
 
-def new_pencil_stroke(doc: Document, commands, color=(0.2, 0.2, 0.2, 1), width: float = 2.0,
-                      pressure=None) -> Item:
-    """Textured pencil ink: per point (x, y, azimuth, altitude, force);
-    `pressure` maps 0..1 along the stroke to force (default 0.6)."""
+def new_pencil_stroke(doc: Document, commands, color=(0.118, 0.106, 0.106, 1), width: float = 3.1,
+                      pressure=None, azimuth: float = 0.5236, altitude: float = 1.0472) -> Item:
+    """Textured pencil ink: per point (x, y, azimuth, altitude, force), as
+    GoodNotes writes it for a mouse/trackpad stroke (force 0, pencil held
+    at 30 degrees azimuth, 60 degrees altitude). `pressure` maps 0..1 along
+    the stroke to force."""
     pts = _sample(commands, 6.0)
     n = len(pts)
-    force = [pressure(i / max(n - 1, 1)) if pressure else 0.6 for i in range(n)]
+    force = [pressure(i / max(n - 1, 1)) if pressure else 0.0 for i in range(n)]
 
     def p5(i):
-        return [u32(pts[i][0]), u32(pts[i][1]), u32(0.5), u32(1.0), u32(force[i])]
+        return [u32(pts[i][0]), u32(pts[i][1]), u32(azimuth), u32(altitude), u32(force[i])]
     kinds, moves, quads = [0], [p5(0)], []
     for i in range(1, n):
         kinds.append(1)
         mid = [u32((pts[i - 1][0] + pts[i][0]) / 2), u32((pts[i - 1][1] + pts[i][1]) / 2),
-               u32(0.5), u32(1.0), u32((force[i - 1] + force[i]) / 2)]
+               u32(azimuth), u32(altitude), u32((force[i - 1] + force[i]) / 2)]
         quads.append([random.getrandbits(32)] + mid + p5(i))  # first value: texture seed
     item, b = _stroke_shell(doc, color, pen=5)
     t = Template(PENCIL_SCHEMA, [1, u32(width / 2), kinds, moves, quads, [], [], [], [], []])
