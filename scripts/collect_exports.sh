@@ -21,21 +21,27 @@ say() { printf '\n\033[1m%s\033[0m\n' "$*"; }
 if [ $# -ge 1 ]; then DIRS=("$1"); else DIRS=("$HOME/Downloads" "$HOME/Desktop" "$HOME/Documents"); fi
 mkdir -p "$WORK/exports"
 found=0
-for d in "${DIRS[@]}"; do
-  [ -d "$d" ] || continue
-  while IFS= read -r f; do
-    base="$(basename "$f")"
-    cp "$f" "$WORK/exports/$base" && found=$((found + 1))
-  done < <(find "$d" -maxdepth 3 -type f -name '*.goodnotes' -mtime -1 2>/dev/null | grep -E '/(0[1-9]|10)_[A-Za-z_]+.*\.goodnotes$')
-done
-# GoodNotes may export a single zip when several notebooks are selected
-for d in "${DIRS[@]}"; do
-  [ -d "$d" ] || continue
-  while IFS= read -r z; do
-    if unzip -l "$z" 2>/dev/null | grep -qE '(0[1-9]|10)_[A-Za-z_]+.*\.goodnotes'; then
-      unzip -q -o -j "$z" '*.goodnotes' -d "$WORK/exports" && found=$((found + 1))
-    fi
-  done < <(find "$d" -maxdepth 2 -type f -name '*.zip' -mtime -1 2>/dev/null)
+PAT='/(0[1-9]|1[0-9])[a-z]?_[A-Za-z0-9_]+.*\.goodnotes$'
+# oldest first, so when the same notebook was exported twice the newest copy wins
+list_candidates() {
+  for d in "${DIRS[@]}"; do
+    [ -d "$d" ] || continue
+    find "$d" -maxdepth 3 -type f \( -name '*.goodnotes' -o -name '*.zip' \) -mtime -2 2>/dev/null
+  done | while IFS= read -r f; do printf '%s\t%s\n' "$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f")" "$f"; done | sort -n | cut -f2-
+}
+while IFS= read -r f; do
+  case "$f" in
+    *.goodnotes)
+      if echo "$f" | grep -qE "$PAT"; then cp "$f" "$WORK/exports/$(basename "$f")" && found=$((found + 1)); fi ;;
+    *.zip)  # GoodNotes exports several selected notebooks as one zip
+      if unzip -l "$f" 2>/dev/null | grep -qE '(0[1-9]|1[0-9])[a-z]?_[A-Za-z0-9_]+.*\.goodnotes'; then
+        unzip -q -o -j "$f" '*.goodnotes' -d "$WORK/exports" && found=$((found + 1))
+      fi ;;
+  esac
+done < <(list_candidates)
+# drop anything from a zip that is not a kit notebook
+for f in "$WORK"/exports/*.goodnotes; do
+  echo "$f" | grep -qE "$PAT" || rm -f "$f"
 done
 if [ "$found" = 0 ]; then
   echo "No exported kit notebooks found. Export them from GoodNotes (Goodnotes format) first,"
