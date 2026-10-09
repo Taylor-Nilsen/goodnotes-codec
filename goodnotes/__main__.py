@@ -7,6 +7,7 @@
   export-pdf DOC.goodnotes OUT.pdf [--pages 0,2-4]
   import-svg DOC.goodnotes OUT.goodnotes IN.svg [--page N] [--keep] [--pen ...]
   dump DOC.goodnotes [--events] [--page N]  raw records, for reverse engineering
+  testkit DIR                             one .goodnotes per feature group, for import testing
 """
 from __future__ import annotations
 
@@ -46,6 +47,143 @@ def _info(doc: Document) -> str:
     return "\n".join(out)
 
 
+def make_testkit(directory) -> list[str]:
+    """Writes one small document per feature group into `directory`, so an
+    import failure in GoodNotes points at one group. Returns the paths."""
+    import math
+    import struct
+    import zlib
+    from .model import (ARROW_FILLED, ARROW_OPEN, DASHED, RichText, TextRun, new_box, new_brush_stroke,
+                        new_fill_shape, new_fountain_stroke, new_image, new_line, new_math,
+                        new_pencil_stroke, new_shape_stroke, new_sticky, new_stroke, new_tape,
+                        new_text_box, paper_pdf, rich_text)
+    out = Path(directory)
+    out.mkdir(parents=True, exist_ok=True)
+
+    def png(w=64, h=48, rgb=(220, 60, 60)):
+        raw = b"".join(b"\0" + bytes(rgb) * w for _ in range(h))
+
+        def chunk(t, d):
+            return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
+        return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0))
+                + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
+
+    wave = [("M", (60, 120))] + [("Q", (80 + 40 * i, 120 + (60 if i % 2 else -60)), (100 + 40 * i, 120)) for i in range(8)]
+
+    def shifted(dy):
+        return [(c[0], *[(x, y + dy) for x, y in c[1:]]) for c in wave]
+
+    kits = {}
+    kits["01_blank"] = lambda d: None
+
+    def ballpoint(d):
+        p = d.pages[0]
+        p.append(new_stroke(d, wave, (0.1, 0.1, 0.8, 1), 3))
+        p.append(new_stroke(d, [("M", (60, 260)), ("L", (400, 260))], (1, 0.9, 0.2, 0.5), 24, highlighter=True))
+        p.append(new_stroke(d, [("M", (60, 320)), ("L", (400, 320))], (0, 0, 0, 1), 3, dash=[3, 2]))
+        p.append(new_shape_stroke(d, "rect", center=(230, 450), size=(200, 100)))
+        p.append(new_shape_stroke(d, "ellipse", center=(230, 650), size=(100, 50), angle=0.3))
+    kits["02_ballpoint_highlighter_dash_shapes"] = ballpoint
+
+    def variable(d):
+        p = d.pages[0]
+        p.append(new_fountain_stroke(d, wave, (0.8, 0.1, 0.1, 1), 8, pressure=lambda t: 0.3 + 0.7 * math.sin(math.pi * t)))
+        p.append(new_fountain_stroke(d, shifted(120), (0, 0, 0, 1), 4))
+        p.append(new_brush_stroke(d, shifted(240), (0.1, 0.6, 0.1, 1), 10, pressure=lambda t: 0.2 + t))
+        p.append(new_tape(d, [("M", (60, 480)), ("L", (400, 500))]))
+    kits["03_fountain_brush_tape"] = variable
+
+    def pencil(d):
+        d.pages[0].append(new_pencil_stroke(d, wave, (0.2, 0.2, 0.2, 1), 3))
+    kits["04_pencil"] = pencil
+
+    def text(d):
+        p = d.pages[0]
+        p.append(new_text_box(d, (60, 80), "A long line of text that should wrap inside the box when GoodNotes lays it out, "
+                                           "instead of being clipped at the right edge.", max_width=500))
+        p.append(new_text_box(d, (60, 260), RichText.build([
+            TextRun("Heading\n", heading=1, bold=True),
+            TextRun("bold ", bold=True), TextRun("italic ", italic=True), TextRun("underline ", underline=True),
+            TextRun("strike ", strike=True), TextRun("link ", link="https://example.com"),
+            TextRun("highlight", highlight=(1, 1, 0, 1)),
+            TextRun("\nfirst item", list_style="bullet"), TextRun("\nsecond item", list_style="bullet"),
+            TextRun("\ncentered", align="center"), TextRun("\nright", align="right")]), max_width=500))
+        p.append(new_box(d, (60, 700), (300, 80), text=rich_text("fixed box, 28pt", size=28)))
+    kits["05_text_boxes_rich_text"] = text
+
+    def shapes(d):
+        p = d.pages[0]
+        p.append(new_box(d, (60, 80), (200, 120), fill=(0.9, 0.9, 1, 1), outline=(2, (0, 0, 0.5, 1), DASHED), corner_radius=16))
+        p.append(new_box(d, (300, 80), (200, 120), fill=(1, 0.9, 0.3, 1), outline=(3, (0, 0, 0, 1)), ellipse=True))
+        p.append(new_box(d, (540, 80), (200, 120), fill=(0.9, 1, 0.9, 1), vertices=[(0.5, 0), (1, 1), (0, 1)]))
+        p.append(new_box(d, (60, 260), (200, 120), fill=(1, 0.8, 0.8, 1), rotation=0.4, shadow=((0, 0, 0, 0.5), 6, (3, 3))))
+        p.append(new_box(d, (300, 260), (200, 120), fill=(0.8, 0.8, 0.8, 1), locked=True))
+        p.append(new_line(d, (60, 460), (400, 560), mid=(300, 420), arrow=ARROW_FILLED, start_arrow=ARROW_OPEN, width=4))
+        p.append(new_line(d, (450, 460), (750, 560), mid=(750, 460), elbow=True, width=3, dash=DASHED))
+        p.append(new_sticky(d, (60, 640), text=rich_text("sticky note", size=20), author=("u", "Taylor")))
+        p.append(new_fill_shape(d, "ellipse", (0.2, 0.5, 0.9, 0.3), center=(500, 760), size=(120, 60), angle=0.4))
+    kits["06_shapes_lines_sticky_fill"] = shapes
+
+    def images(d):
+        p = d.pages[0]
+        p.append(new_image(d, png(), (200, 200), (128, 96)))
+        p.append(new_image(d, png(32, 32, (40, 120, 220)), (500, 200), (120, 120), angle=math.radians(30), locked=True))
+        p.append(new_image(d, paper_pdf((200, 200), "grid", 20), (200, 500), (160, 160)))  # sticker (PDF)
+        p.append(new_math(d, r"x^2 + y^2 = r^2", png(120, 40, (0, 0, 0)), (500, 500), (240, 80)))
+    kits["07_images_sticker_math"] = images
+
+    def document(d):
+        p0 = d.pages[0]
+        p1 = d.add_page()
+        p2 = d.add_page()
+        d.set_bookmarked(p1)
+        d.set_rotation(p2, 90)
+        d.set_labels(p1, ["todo"])
+        top = d.add_outline("Chapter 1", p0)
+        d.add_outline("Section 1.1", p1, parent=top)
+        d.add_comment(p0, (200, 200), "a comment", author="Taylor")
+        d.favourite = True
+        p0.append(new_stroke(d, wave, (0, 0, 0, 1), 2))
+        p1.append(new_stroke(d, wave, (0, 0, 1, 1), 2))
+        d.import_pdf(paper_pdf((600, 800), "dotted", 24))
+    kits["08_pages_outline_bookmark_comment_pdf"] = document
+
+    def erase(d):
+        p = d.pages[0]
+        p.append(new_stroke(d, [("M", (60, 200)), ("L", (500, 200))], (0, 0, 0, 1), 3))
+        p.append(new_stroke(d, [("M", (60, 300)), ("L", (500, 300))], (0, 0, 0, 1), 3))
+        p.erase(d, (280, 200), 20)
+        p.delete(p.items[1])
+        a = new_box(d, (60, 400), (100, 60), fill=(1, 0, 0, 1))
+        b = new_box(d, (200, 400), (100, 60), fill=(0, 1, 0, 1))
+        p.append(a)
+        p.append(b)
+        p.group_items([a, b])
+        p.duplicate(b, 150, 0)
+    kits["09_erase_delete_group_duplicate"] = erase
+
+    def audio(d):
+        d.add_audio_note(_silent_wav(2.0), 2.0, page=d.pages[0], name="Test recording", offsets=[0.0, 1.0])
+    kits["10_audio_note"] = audio
+
+    paths = []
+    for name, build in kits.items():
+        doc = Document.new(name, paper="lined")
+        build(doc)
+        path = out / f"{name}.goodnotes"
+        doc.save(str(path))
+        paths.append(str(path))
+    return paths
+
+
+def _silent_wav(seconds: float, rate: int = 8000) -> bytes:
+    import struct
+    n = int(seconds * rate)
+    data = b"\0\0" * n
+    return (b"RIFF" + struct.pack("<I", 36 + len(data)) + b"WAVEfmt " + struct.pack("<IHHIIHH", 16, 1, 1, rate, rate * 2, 2, 16)
+            + b"data" + struct.pack("<I", len(data)) + data)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="goodnotes", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sp = ap.add_subparsers(dest="cmd", required=True)
@@ -79,6 +217,8 @@ def main(argv=None):
     p.add_argument("--keep", action="store_true")
     p.add_argument("--scale", type=float, default=1.0)
     p.add_argument("--pen", default="ballpoint")
+    p = sp.add_parser("testkit")
+    p.add_argument("dir")
     p = sp.add_parser("dump")
     p.add_argument("doc")
     p.add_argument("--events", action="store_true")
@@ -115,6 +255,9 @@ def main(argv=None):
         for it in svg_to_items(doc, a.svg, scale=a.scale, pen=a.pen):
             page.append(it)
         doc.save(a.out)
+    elif a.cmd == "testkit":
+        for name in make_testkit(a.dir):
+            print(name)
     elif a.cmd == "dump":
         doc = Document(a.doc)
         if a.events or a.page is None:

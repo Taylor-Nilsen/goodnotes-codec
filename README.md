@@ -58,6 +58,7 @@ python -m goodnotes info notes.goodnotes
 python -m goodnotes export-svg notes.goodnotes 0 page.svg
 python -m goodnotes export-pdf notes.goodnotes notes.pdf
 python -m goodnotes import-svg blank.goodnotes out.goodnotes drawing.svg --pen fountain
+python -m goodnotes testkit kit/     # one file per feature group, for import testing in GoodNotes
 python -m unittest
 ```
 
