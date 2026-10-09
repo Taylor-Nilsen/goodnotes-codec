@@ -163,6 +163,20 @@ def make_testkit(directory, only=None) -> list[str]:
         d.add_comment(d.pages[0], (200, 200), "a comment", author="Taylor")
     kits["08e_comment"] = comment
 
+    def comment_thread_only(d):
+        from .model import Msg, lww, write_color, write_point, new_uuid, key_between
+        thread, cid = new_uuid(), new_uuid()
+        tb = Msg()
+        tb.set_bytes(1, thread)
+        tb.set_bytes(2, d.doc_id)
+        tb.set_bytes(3, lww(key_between(None, None)))
+        anchor = Msg()
+        anchor.set_bytes(1, d.pages[0].page_id)
+        tb.set_bytes(4, lww(anchor))
+        tb.set_bytes(5, cid)
+        d._event(130, thread, tb, version_field=16)
+    kits["08f_comment_thread_only"] = comment_thread_only
+
     def erase(d):
         p = d.pages[0]
         p.append(new_stroke(d, [("M", (60, 200)), ("L", (500, 200))], (0, 0, 0, 1), 3))
@@ -184,6 +198,14 @@ def make_testkit(directory, only=None) -> list[str]:
     def audio_plain(d):
         d.add_audio_note(_silent_wav(2.0), 2.0)
     kits["10b_audio_note_plain"] = audio_plain
+
+    def audio_refs(d):
+        d.add_audio_note(_silent_wav(2.0), 2.0, page=d.pages[0], offsets=[0.0, 1.0])
+    kits["10c_audio_note_page_refs_no_name"] = audio_refs
+
+    def audio_name(d):
+        d.add_audio_note(_silent_wav(2.0), 2.0, name="Test recording")
+    kits["10d_audio_note_name_no_refs"] = audio_name
 
     def wrap_variants(d):
         """Which sizing wraps a long line: each box says which variant it is."""
@@ -219,6 +241,9 @@ def make_testkit(directory, only=None) -> list[str]:
             continue
         doc = Document.new(name, paper="lined")
         build(doc)
+        # every kit page gets a marker stroke, so an empty-looking import means something was lost
+        doc.pages[0].append(new_stroke(doc, [("M", (700, 40)), ("L", (780, 40)), ("L", (740, 90)), ("L", (700, 40))],
+                                       (0.6, 0.6, 0.6, 1), 2))
         path = out / f"{name}.goodnotes"
         doc.save(str(path))
         paths.append(str(path))

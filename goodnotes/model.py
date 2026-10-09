@@ -3103,7 +3103,7 @@ def new_pencil_stroke(doc: Document, commands, color=(0.118, 0.106, 0.106, 1), w
     GoodNotes writes it for a mouse/trackpad stroke (force 0, pencil held
     at 30 degrees azimuth, 60 degrees altitude). `pressure` maps 0..1 along
     the stroke to force."""
-    pts = _sample(commands, 6.0)
+    pts = _sample(commands, 1.5)  # GoodNotes stamps texture per segment: real strokes are this dense
     n = len(pts)
     force = [pressure(i / max(n - 1, 1)) if pressure else 0.0 for i in range(n)]
 

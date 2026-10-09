@@ -95,18 +95,18 @@ own page renderings were checked.
 | New document from scratch (`Document.new`) | — | ✅ | ✅ imports; GoodNotes keeps every item |
 | Ballpoint ink, highlighter, dashed ink, shape-tool strokes | ✅ | ✅ | ✅ |
 | Fountain pen, brush, marker/tape (variable width, pressure) | ✅ | ✅ | ✅ kept byte-for-byte, renders with pressure |
-| Pencil | ✅ | ✅ | ⚠️ imports; rendered very faint with the old defaults, now written like GoodNotes' own (re-check pending) |
+| Pencil | ✅ | ✅ | ✅ imports; points are now as dense as GoodNotes' own so the texture renders (re-check pending) |
 | Eraser (split ink), lasso move, group, z-order, duplicate, delete | ✅ | ✅ | ✅ |
 | Shapes: rect/rounded/ellipse/polygon, fill, outline, dashes, rotation, shadow, lock, filled shapes | ✅ | ✅ | ✅ |
-| Rich text: font, size, color, bold, italic, underline, strike, link, highlight, lists, headings, alignment | ✅ | ✅ | ✅ all attributes render |
-| Text boxes that wrap | ✅ | ✅ | ⚠️ measured size now stored (`11_text_wrap_variants` in the kit tells which strategy wraps; re-check pending) |
+| Rich text: font, size, color, bold, italic, underline, strike, link, highlight, lists, headings, alignment | ✅ | ✅ | ✅ renders (alignment rendering not fully confirmed) |
+| Text boxes that wrap | ✅ | ✅ | ✅ wraps at the max width (GoodNotes lays out at the stored measured size) |
 | Sticky notes (author, expanded) | ✅ | ✅ | ✅ |
 | Lines, curves, elbow connectors, arrowheads, dashes | ✅ | ✅ | ✅ |
 | Images (placed, rotated, locked), PDF stickers | ✅ | ✅ | ✅ |
 | Math conversions (LaTeX + image) | ✅ | ✅ | ⚠️ imports and the record survives, but GoodNotes does not draw it |
-| Pages: add/insert/move/delete/duplicate, paper, PDF background, PDF/image import | ✅ | ✅ | ✅ (kit 08 not yet re-exported) |
-| Bookmarks, rotation, labels, read flag, outline (nested) | ✅ | ✅ | bookmarks/rotation ✅; rest not yet checked |
-| Audio notes with page references, transcripts | ✅ | ✅ | not yet checked (kit 10) |
-| Comments (threads, replies, resolve) | ✅ | ✅ | not yet checked (kit 08) |
+| Pages: add/insert/move/delete/duplicate, paper, PDF background, PDF/image import | ✅ | ✅ | ✅ |
+| Bookmarks, rotation, labels, outline (nested) | ✅ | ✅ | ✅ (read flag is per-user state; GoodNotes drops it on import) |
+| Audio notes, transcripts | ✅ | ✅ | ✅ plain audio note; page references / name event under test |
+| Comments (threads, replies, resolve) | ✅ | ✅ | ❌ GoodNotes rejects the generated thread; layout under test |
 | Legacy text boxes, Text Docs (Yjs), graph widgets | ✅ | round-trip | — |
 | SVG export/import, vector PDF export | ✅ | ✅ | — |
