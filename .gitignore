@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 *.goodnotes
+!tests/fixtures/*.goodnotes
 *.svg
 !tests/fixtures/*.svg
 .DS_Store
