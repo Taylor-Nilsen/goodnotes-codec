@@ -1,0 +1,98 @@
+GoodNotes full regression — PR 11 — 2026-10-20 11:19 UTC
+Branch feat/full-format @ 499b5bb, python3 -m unittest: 42 OK.
+Kit: python3 -m goodnotes testkit <tmp> (23 files). Imported via background accessibility into
+"Test" in 4 multi-file import sheets. Page screenshots taken in the background (select in library
+> File > Open, Go > Jump to page…, screencapture -l, View > Zoom Out = fit width; tall pages such
+as Letter portrait are slightly cropped). Pointer / save-panel work done in two full-screen batches
+while the user was idle (HIDIdleTime >= 120 s). All 26 notebooks (23 kit + 3 CLI) moved to GoodNotes
+trash afterwards (projection deleted=1 for all). No GoodNotes crash reports during the run.
+Every page shows the grey triangle marker at the top right.
+
+Summary (A = kit in GoodNotes, B = CLI tools, C = our exporters vs GoodNotes)
+  item                                  result  note
+  A 01_blank                            pass    narrow-ruled page + marker
+  A 02 ballpoint/highlighter/dash/shapes FAIL   dashed line renders SOLID; rest ok
+  A 03 fountain/brush/tape              pass    red thick-in-middle, thin black, green thickening, tape
+  A 04_pencil                           pass    faint sine wave (faint by design)
+  A 05 text boxes / rich text           FAIL    "highlight" has no highlight; rest ok
+  A 05b text alignment                  FAIL    left/center/right ok; JUSTIFIED renders left-aligned
+  A 06 shapes/lines/sticky/fill         FAIL    pink box has no shadow; lock ok (drag refused); rest ok
+  A 07 images/sticker/math              pass    red img, rotated blue img, grid sticker; math draws nothing (known)
+  A 08a pages + PDF import              pass    p1 black wave, p2 blue wave, p3 empty, p4 dotted 600x800
+  A 08b bookmark/rotation/favourite     FAIL    p2 bookmarked + rotated ok; notebook NOT favourited
+  A 08c labels                          pass    projection lww_labels {1:"todo"} (Mac UI shows no labels)
+  A 08d outline                         pass    Chapter 1 > Section 1.1 nested, open p1 / p2
+  A 08e comment                         pass    marker ~(199,199); panel "a comment" by Taylor
+  A 08f resolved/open threads           pass    one marker ~(499,600); panel offers Resolve; projection ok
+  A 09 erase/delete/group/duplicate     FAIL    page ok; duplicate green box moves WITH the group
+  A 10a audio + page refs               note    name/2 s/refs ok in projection; playback stalls at 00:00
+  A 10b audio unnamed                   pass    2 s, no name, refs {}
+  A 10d audio named                     pass    "Test recording", 2 s, refs {}
+  A 11 text wrap variants               FAIL    A, B wrap; C and D collapse to a clipped sliver
+  A 12 pencil variants                  pass    4 waves with grain (light / wide soft / dark / ramp)
+  A 13a paper templates (15 p)          pass    all templates/colours; labels readable on black
+  A 13b paper sizes (3 p)               pass    A4 landscape, Letter portrait, custom 900x1200
+  A 14 backgrounds (3 p)                pass    blue PNG, PDF page 2 squared+red line, dotted-on-black
+  A exports (9 files x PDF+Goodnotes)   note    all 18 exported; 13a and 14 Goodnotes exports warn
+                                                "Early template reference … (recovered)"
+  B cli_new (dotted, yellow, 3 p)       pass    3 dotted yellow pages
+  B cli_from_pdf (13a GoodNotes PDF)    pass    15 pages, match 13a (p1 blank/white, p12 dotted/black)
+  B cli_svg (import-svg)                pass    red circle, blue line, "svg text" on page 1
+  C 02                                  FAIL    ours draw dashes (GoodNotes solid); highlighter end caps differ
+  C 03                                  note    match; GoodNotes tape has a soft shadow/edge ours lack
+  C 05                                  FAIL    heading size, highlight, SVG wrap, bullet indent differ (below)
+  C 06                                  FAIL    pink box offset; sticky author position; shadow only in our SVG
+  C 09                                  pass    identical
+
+Import evidence: app log "Bulk imported N events" for every file (01 7, 02-05b 7 each, 06 7,
+07 11, 08a 17, 08b 12, 08c 8, 08d 12, 08e 9, 08f 13, 09 7, 10a 10, 10b 9, 10d 10, 11 7, 12 7,
+13a 64, 13b 16, 14 16, cli_new 11, cli_svg 11, cli_from_pdf 50), then "Ended import background
+task. reason=import-operation-completed". No "Error importing" lines; GoodNotes pid unchanged.
+
+Failure details
+02  The kit's dashed black ballpoint line renders as a plain solid line in GoodNotes (02_p1.png,
+    gn_exports/02_*.pdf). Our PDF/SVG draw it dashed (C_02_side_by_side.png). The dash
+    attribute is not one GoodNotes honours for this stroke type, or is written in the wrong field.
+05  "highlight" run shows no highlight colour in GoodNotes (05_p1.png). Our PDF draws yellow, our
+    SVG doesn't. Also vs GoodNotes: "Heading" is bold at body size in GoodNotes, larger in ours;
+    GoodNotes indents bullets, ours don't; our SVG wraps the first box to 4 lines (GoodNotes and
+    our PDF: 3). (In pdftoppm renders our PDF's bold/italic look regular — pdftoppm font
+    substitution, Quick Look shows them correctly.)
+05b Justified paragraph: first wrapped line ends ~10 px short of the right edge the right-aligned
+    paragraph reaches, with normal word spacing — i.e. left-aligned, not justified (05b_p1.png).
+    left/center/right are now correct after 2901dec.
+06  Rotated pink box shows no drop shadow in GoodNotes (06_p1.png, gn PDF). Our SVG draws a shadow,
+    our PDF doesn't. Our renders also place the rotated box ~25 px up/right of GoodNotes (rotation
+    origin differs) and put the sticky's "Taylor" label at the top instead of bottom-left.
+    Locked grey box: selection toolbar shows the lock; drag does not move it — PASS
+    (06_locked_box_drag.png).
+08b Notebook favourite not applied: projection documents.favourited=0 and no row in
+    user_to_document_favourited for the doc; library star empty. Kit writes documentFavourited (34).
+    Page 2 bookmark (pages.favourited=1, red bookmark in sidebar) and 90° rotation are correct.
+09  Tapping the red box selects red + green + the duplicated green box, and all three move
+    together (09_group_move.png). Expected: red+green group only; the duplicate should be separate.
+    Move was undone before trashing. Erase gap / deleted line / duplicate position are correct.
+11  Boxes C ("fixed-auto-height", unmeasured) and D ("auto", unmeasured) render as a few-pixel
+    clipped sliver (only the top of the first glyph visible) — GoodNotes does not size unmeasured
+    text boxes itself; A and B (measured) wrap correctly (11_p1.png).
+Exports: GoodNotes-format export of 13a and 14 completes "with warnings": "Early template
+    reference — Template referenced attachment <id> before it was created (recovered)" for every
+    template (13a_export_warnings.png, 14_export_warnings.png). Our event order puts templateCreated
+    before the attachmentCreated it references. The 13a alert was taller than the screen with no
+    reachable OK; it was cleared via Goodnotes > Quit (the quit was cancelled by the pending save
+    panel; GoodNotes kept running, same pid).
+10a Projection: audioName "Test recording", 2.0 s, refs {1 s → page 1, 0 s → page 1}. Audio panel
+    lists "Test recording" 00:00–00:02; pressing Play switches to Pause but the playhead stays at
+    00:00 after 2.5 s (10a_audio_playing.png). With one page, a jump-to-page can't be observed.
+
+Files
+  <file>_p<N>.png             page screenshots (screencapture -l, downscaled to 1600 px)
+  08b_sidebar_bookmark.png, 08d_outline_*.png, 08e_comments_panel.png, 08f_open_thread_panel.png,
+  06_locked_box_drag.png, 09_group_move.png, 10a_audio_playing.png, 1{3a,4}_export_warnings.png
+  gn_exports/                 GoodNotes PDF + .goodnotes exports of 02 03 05 05b 06 07 09 13a 14
+  B_cli/                      cli_new / cli_svg / cli_from_pdf .goodnotes + test.svg;
+                              B_*.png screenshots of them in GoodNotes
+  C_<n>_ours.pdf/.svg         python3 -m goodnotes export-pdf / export-svg <kit file> [0]
+  C_<n>_side_by_side.png      GoodNotes PDF | our PDF | our SVG (pdftoppm / rsvg-convert)
+Note: cli_new and cli_svg share a document id (import-svg keeps the source id); GoodNotes assigned
+new ids on import, no collision.
