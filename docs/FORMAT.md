@@ -112,5 +112,15 @@ last-writer-wins.
 | 57 | bookmark `3 {1 1}` · 63 rotation `3 {1 quarter turns}` · 65 outline entry `4 order key, 5 title` |
 | 160, 161, 210, 213 | audio recordings and per-word transcript timings |
 
+**Paper.** Built-in paper is a PDF attachment like any background; layer
+field 9 names it `<template id>_standard_1_<color> - <Name>` (color 1 yellow,
+2 white, 3 black). The PDF is 6/11 of the page size (Standard: 455.04 x 588.45
+pt for 834.24 x 1078.825). Layer 7 is the line spacing and 18 `{1 {origin,
+size} writing area, 2 spacing minus line width, 3 line width, 5 1 light / 2 dark}`, all in page units.
+Essentials geometry, in PDF points from the top-left: dotted r 0.5 dots every
+16; squared 0.5 lines ending on every 16; narrow ruled 0.5 rules every 17.5
+from 50; wide ruled every 25 from 49.5. Lines are 0.816/0.824/0.827 on white
+(1) and yellow (0.973/0.969/0.914), 0.345/0.349/0.357 on black (0.2).
+
 **Page order** is the page events' order keys compared as ASCII strings;
 the ink for a page lives in `notes/<page id + 1>`.

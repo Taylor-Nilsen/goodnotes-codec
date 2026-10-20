@@ -33,6 +33,29 @@ for item in page.visible():                 # edit what's already there
 doc.save("out.goodnotes")                   # File > Import in GoodNotes
 ```
 
+### Paper and backgrounds
+
+Every page size is a custom `(w, h)` in page units; `paper.SIZES` holds
+GoodNotes' menu (standard, a3, a4, a5, a6, a7, letter, tabloid) as presets.
+Size defaults to the page's current size (Standard on new notebooks).
+
+```python
+from goodnotes import paper
+
+doc.set_paper(page, "dotted", "black")                        # keeps the page's size
+doc.set_paper(page, "wide_ruled", "yellow", paper.SIZES["a4"], landscape=True)
+doc.set_paper(page, "squared", "white", (900, 1200))          # any custom size
+
+doc.set_background(page, "photo.jpg", size=paper.SIZES["letter"])  # PNG/JPEG (others need Pillow)
+doc.set_background(page, "planner.pdf", pdf_page=3)                # a PDF page
+doc.set_background(page, "other.goodnotes", pdf_page=2)            # another notebook's page 2 paper
+```
+
+Templates: `blank`, `dotted`, `squared`, `narrow_ruled`, `wide_ruled`; colors:
+`white`, `yellow`, `black`. Built-in paper is regenerated at the page's size
+(the pattern repeats, it doesn't stretch); custom backgrounds are stretched to
+fill the page.
+
 ```bash
 python -m goodnotes.svg export doc.goodnotes 0 page.svg
 python -m goodnotes.svg import template.goodnotes out.goodnotes drawing.svg --keep
@@ -57,6 +80,7 @@ Checked by importing generated files into GoodNotes for macOS:
 | Dashes, filled arrowheads, hyperlinks | ✅ | ✅ | not yet checked |
 | Images (placed, rotated), stickers | ✅ | ✅ | ✅ |
 | Pages: order, add/insert/move/delete, custom PDF background | ✅ | ✅ | ✅ |
+| Built-in Essentials paper at any size, image backgrounds | ✅ | ✅ | not yet checked |
 | Bookmarks, page rotation, outline | ✅ | ✅ | not yet checked |
 | Legacy RTF text boxes, math conversions (LaTeX) | ✅ | — | — |
 | Audio recordings, graph widgets, comments, Text Docs | round-trip only | — | — |
