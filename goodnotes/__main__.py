@@ -164,7 +164,7 @@ def make_testkit(directory, only=None) -> list[str]:
         d.add_comment(d.pages[0], (200, 200), "a comment", author="Taylor")
     kits["08e_comment"] = comment
 
-    def _content_comment(d, content):
+    def _content_comment(d, content, wrap=True):
         """Round 6: 08e writes content as rich text; these try other content messages."""
         from .model import Msg, lww, write_point, new_uuid, key_between
         thread, cid = new_uuid(), new_uuid()
@@ -182,7 +182,7 @@ def make_testkit(directory, only=None) -> list[str]:
         cb.set_bytes(1, cid)
         cb.set_bytes(2, thread)
         cb.set_bytes(3, d.doc_id)
-        cb.set_bytes(4, lww(content))
+        cb.set_bytes(4, lww(content) if wrap else content)
         cb.set_bytes(5, lww(key_between(None, None)))
         cb.set_bytes(7, "Taylor")
         d._event(133, cid, cb)
@@ -190,6 +190,19 @@ def make_testkit(directory, only=None) -> list[str]:
     # rich text with one bare segment (no attributes) / a {1 text} wrapper
     kits["08s_comment_rich_bare"] = lambda d: _content_comment(d, _Msg([[1, LEN, _Msg([[1, LEN, b"a comment"]])]]))
     kits["08t_comment_text_wrapper"] = lambda d: _content_comment(d, _Msg([[1, LEN, b"a comment"]]))
+
+    def _sticky_text(d):
+        """GoodNotes' own rich-text container, as on a sticky note: {1 {1 type, 2 bv41 RichText,
+        3 hash, 4 version}, 5 default attrs}. The comment body may be this or one layer of it."""
+        from .model import new_sticky, rich_text as _rt
+        return new_sticky(d, (0, 0), text=_rt("a comment")).body.sub(31)
+    kits["08u_comment_text_raw"] = lambda d: _content_comment(d, _sticky_text(d).sub(1))
+    kits["08v_comment_text_container"] = lambda d: _content_comment(d, _Msg([[1, LEN, _sticky_text(d).sub(1)]]))
+    kits["08w_comment_sticky_text_full"] = lambda d: _content_comment(d, _sticky_text(d))
+    from .model import rich_text as _rich
+    kits["08x_comment_rich_unwrapped"] = lambda d: _content_comment(d, _rich("a comment").msg, wrap=False)
+    kits["08y_comment_text_raw_unwrapped"] = lambda d: _content_comment(d, _sticky_text(d).sub(1), wrap=False)
+    kits["08z_comment_container_unwrapped"] = lambda d: _content_comment(d, _sticky_text(d), wrap=False)
 
     def erase(d):
         p = d.pages[0]
