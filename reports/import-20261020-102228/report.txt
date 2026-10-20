@@ -1,0 +1,54 @@
+GoodNotes import report — round 5 — 2026-10-20 10:22 UTC
+Branch feat/full-format @ 34bd9f2, python3 -m unittest: 41 OK.
+Kit: python3 -m goodnotes testkit <tmp> --only 08e,08p,08q,08r. All four imported to "Test" via
+background accessibility. Opening the comments panels and the .goodnotes re-exports needed the
+pointer / save panel, done in one full-screen batch after HIDIdleTime >= 120 s (10:26-10:28 UTC),
+then the screen was handed back. All four then moved to GoodNotes trash (deleted=1). No crash reports.
+Page = 834 x 1079 pt; marker positions read off the window captures against the page edges.
+
+Files here
+  <name>_page_marker.png      screencapture -l <window>, page with the marker (panel closed)
+  <name>_comments_panel.png   same, after tapping the marker
+  <name>.goodnotes            GoodNotes' own re-export (Goodnotes format, Include Comments on)
+
+Summary
+  file                              import    erased?  marker              panel
+  08e_comment (region{origin,1x1})  IMPORTED  no       top-left (0,0)      "Taylor", no text
+  08p_comment_region_point (point)  IMPORTED  no       (200,200)  OK       "Taylor", no text
+  08q_comment_region_rect_40        IMPORTED  no       top-left (0,0)      "Taylor", no text
+  08r_comment_region_wrapped        IMPORTED  no       top-left (0,0)      "Taylor", no text
+
+Evidence per file
+08e_comment — IMPORTED
+  Log: "Bulk imported 9 events", "Ended import background task. reason=import-operation-completed".
+  projection: thread 85CEB742… is_erased=0, comment content LWW{1:"a comment"}, author "Taylor".
+  anchor: {1 pageId, 2 region {1 (200,200), 2 (1,1)}}.
+  Re-export: events end 130, 133, 31, 106, 105, 104, 105, 103, 10 — no 137 commentThreadErased;
+  page items {'stroke': 1} only (no sticky). `goodnotes info`: "comment thread on page 0: Taylor: a comment".
+  Marker: small blue bubble at the page's top-left corner (08e_page_marker.png).
+08p_comment_region_point — IMPORTED
+  9 events; thread 7322029D… is_erased=0; region = bare point (200,200).
+  Re-export: no 137, no sticky; GoodNotes writes the region back unchanged as {1:200, 2:200}.
+  Marker: blue bubble at ~(199,197) page units — i.e. at (200,200) (08p_page_marker.png).
+08q_comment_region_rect_40 — IMPORTED
+  9 events; thread 1D655DE2… is_erased=0; region {1 (200,200), 2 (40,40)}.
+  Re-export: no 137, no sticky. Marker at the top-left corner.
+08r_comment_region_wrapped — IMPORTED
+  9 events; thread 918DBB1C… is_erased=0; region {1 {1 (200,200), 2 (1,1)}}.
+  Re-export: no 137, no sticky. Marker at the top-left corner.
+
+Comments panel (all four): tapping the marker opens "Comments" with one entry, avatar "T",
+"Taylor · N minutes ago", but NO comment text — "a comment" is not displayed, although the
+projection row and GoodNotes' own re-export both still carry it (133 body 4 = {1:"a comment"}).
+
+Conclusions
+- The region must be a bare point {1 x, 2 y} (08p) for GoodNotes to place the marker. Any
+  {origin,size} rect form (08e, 08q) or the wrapped form (08r) is accepted but ignored -> (0,0).
+- No variant is erased or turned into a sticky — the region anchor fixes round 4's migration.
+- Comment text isn't shown in the panel for any variant. The text survives import/export, so
+  it's how GoodNotes renders the body: probably expects rich text (or something in the comment
+  message we don't set: field 6 authorId is empty, field 5 position = {1:"V"}).
+
+Needs your eyes
+- Comment body: open any real GoodNotes comment you create by hand and re-export it, so we can
+  diff its 133 commentCreated against ours (there are none in your library to compare).
