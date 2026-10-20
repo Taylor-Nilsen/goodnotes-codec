@@ -1,0 +1,182 @@
+GoodNotes import report — round 7 — 2026-10-20 10:48 UTC
+Branch feat/full-format @ 802eeb4, python3 -m unittest: 41 OK. No crash reports; both notebooks
+moved to GoodNotes trash afterwards (deleted=1). Screen work done in one full-screen batch after
+HIDIdleTime >= 120 s (10:50-10:52 UTC), then handed back.
+
+Job 1 — 08e_comment: IMPORTED, marker at (200,200), panel shows "a comment" under Taylor  -> PASS
+  Log: "Bulk imported 9 events", "Ended import background task. reason=import-operation-completed".
+  projection: thread 130F9B72… is_erased=0, anchor {1 pageId, 2 point (200,200)};
+  comment content 0A09 "a comment" (= LWW{1:{1:"a comment"}}), author_name "Taylor".
+  Marker: blue bubble at ~(198,196) page units (08e_page_marker.png).
+  Panel: "Taylor · 2 minutes ago / a comment" (08e_comments_panel.png).
+
+Job 2 — ground truth: zz_real_comment (Blank paper, the dialog's default black colour, in "Test")
+  Created via File > New Notebook (background). Comments added by hand with page right-click >
+  "Add Comment": #1 near the page middle, text "a comment", reply "a reply"; #2 lower on the page,
+  text "colored". Exported as Goodnotes with "Include Comments" on (zz_real_comment.goodnotes).
+  Panels: zz_comment1_panel.png ("Me / a comment", REPLIES "Me / a reply"), zz_comment2_panel.png.
+  COLOR: not set. GoodNotes for Mac has no colour option for comments — the thread "…" menu has
+  only Resolve / Copy Link, the per-comment menu only Edit / Delete / Copy Link to Comment, and the
+  lasso selection toolbar only screenshot / AI. (The empty panel hints at an "expand icon … to
+  display it as a sticky note", which is where colour would live; no such control is shown on Mac.)
+
+What the real events show (vs. our writer)
+  130 commentThreadCreated: 1 threadId, 2 documentId, 3 position = varint 1 / 2 (ours: LWW{1:"V"}),
+      4 anchor = {1 {1 pageId, 2 point{1 x, 2 y}}, 2 stamp{1:1, 2:random}}  (ours: stamp lacks 1:1),
+      5 firstCommentId, 10 ts, 11 eventId, 13 replicaId, 14 logical ts, 16 schemaVersion 24.
+      Comment #1 at (417, 513), #2 at (298, 899) page units.
+  133 commentCreated: 1 commentId, 2 threadId, 3 documentId, 4 content = LWW{1:{1:text}, 2:{1:1,2:rand}},
+      5 position = varint (1 first comment, 2 reply) (ours: LWW{1:"V"}),
+      6 authorId "_9edf542670ce298e56f2d36811847db0" (ours: empty), 7 authorName "Taylor Nilsen",
+      10/11/13/14, 15 schemaVersion 24.
+  A reply is just another 133 on the same thread with position 2. No 131/132/134-137 events.
+
+Needs your eyes
+- Comment colour can't be set on Mac; if it matters, set one on iPad and export that notebook.
+
+Raw 130-137 events in zz_real_comment.goodnotes (index.events.pb, full Event records)
+event list: 30:documentCreated 6:attachmentCreated 2:templateCreated 54:pageCreated 10:currentPageDidSet 104:notesIndexUpdated 105:indexStoreUpdated 103:attachmentIndexUpdated 130:commentThreadCreated 133:commentCreated 133:commentCreated 130:commentThreadCreated 133:commentCreated
+
+=== 130 commentThreadCreated (289 bytes, full Event record incl. field 1 aggregateId)
+  0a2438423932383145312d414432452d343333342d413435352d3441304634364141304537439208f7010a2438423932383145312d414432452d343333342d41
+  3435352d344130463436414130453743122443303338464641342d443941332d344533362d393135392d4341363232304533433244351801223e0a320a244533
+  4339313034302d464233332d343843442d423137342d453745423637413636354539120a0d0080d04315004000441208080110b3caf584072a24333330313537
+  33412d313139352d344445452d394344442d32333430443838434234453751e4832dff8e157a425a2434304637364241302d303736322d344139462d42453437
+  2d33354231304144423430453368f0ab93ed9bedb09e0e70a88acfbf9134800118
+  decoded body:
+    1: "8B9281E1-AD2E-4334-A455-4A0F46AA0E7C"
+    2: "C038FFA4-D9A3-4E36-9159-CA6220E3C2D5"
+    3: 1
+    4 {
+      1 {
+        1: "E3C91040-FB33-48CD-B174-E7EB67A665E9"
+        2 {
+          1: fixed 0080d043
+          2: fixed 00400044
+        }
+      }
+      2 {
+        1: 1
+        2: 1889363251
+      }
+    }
+    5: "3301573A-1195-4DEE-9CDD-2340D88CB4E7"
+    10: double 1792493482712.2432
+    11: "40F76BA0-0762-4A9F-BE47-35B10ADB40E3"
+    13: 1025909674054309360
+    14: 1791403214120
+    16: 24
+
+=== 133 commentCreated (299 bytes, full Event record incl. field 1 aggregateId)
+  0a2433333031353733412d313139352d344445452d394344442d323334304438384342344537aa0881020a2433333031353733412d313139352d344445452d39
+  4344442d323334304438384342344537122438423932383145312d414432452d343333342d413435352d3441304634364141304537431a244330333846464134
+  2d443941332d344533362d393135392d43413632323045334332443522170a0b0a096120636f6d6d656e74120808011084a7908d08280132215f396564663534
+  32363730636532393865353666326433363831313834376462303a0d5461796c6f72204e696c73656e515cd12dff8e157a425a2438313330304446332d454345
+  392d343844422d383131332d45384244334232413931323068f0ab93ed9bedb09e0e70a98acfbf91347818
+  decoded body:
+    1: "3301573A-1195-4DEE-9CDD-2340D88CB4E7"
+    2: "8B9281E1-AD2E-4334-A455-4A0F46AA0E7C"
+    3: "C038FFA4-D9A3-4E36-9159-CA6220E3C2D5"
+    4 {
+      1 {
+        1: "a comment"
+      }
+      2 {
+        1: 1
+        2: 2175013764
+      }
+    }
+    5: 1
+    6: "_9edf542670ce298e56f2d36811847db0"
+    7: "Taylor Nilsen"
+    10: double 1792493482717.085
+    11: "81300DF3-ECE9-48DB-8113-E8BD3B2A9120"
+    13: 1025909674054309360
+    14: 1791403214121
+    15: 24
+
+=== 133 commentCreated (297 bytes, full Event record incl. field 1 aggregateId)
+  0a2434424342413332432d343831312d343645352d383834422d364136453533414243334537aa08ff010a2434424342413332432d343831312d343645352d38
+  3834422d364136453533414243334537122438423932383145312d414432452d343333342d413435352d3441304634364141304537431a244330333846464134
+  2d443941332d344533362d393135392d43413632323045334332443522150a090a0761207265706c791208080110c1e083b309280232215f3965646635343236
+  3730636532393865353666326433363831313834376462303a0d5461796c6f72204e696c73656e5156bc7b018f157a425a2443363944453543362d314432452d
+  343439422d383539392d43433043333445433335314268f0ab93ed9bedb09e0e70ab8acfbf91347818
+  decoded body:
+    1: "4BCBA32C-4811-46E5-884B-6A6E53ABC3E7"
+    2: "8B9281E1-AD2E-4334-A455-4A0F46AA0E7C"
+    3: "C038FFA4-D9A3-4E36-9159-CA6220E3C2D5"
+    4 {
+      1 {
+        1: "a reply"
+      }
+      2 {
+        1: 1
+        2: 2522935361
+      }
+    }
+    5: 2
+    6: "_9edf542670ce298e56f2d36811847db0"
+    7: "Taylor Nilsen"
+    10: double 1792493492155.771
+    11: "C69DE5C6-1D2E-449B-8599-CC0C34EC351B"
+    13: 1025909674054309360
+    14: 1791403214123
+    15: 24
+
+=== 130 commentThreadCreated (289 bytes, full Event record incl. field 1 aggregateId)
+  0a2439394239453737422d374430422d343446342d424533452d3134463735334137384337309208f7010a2439394239453737422d374430422d343446342d42
+  4533452d313446373533413738433730122443303338464641342d443941332d344533362d393135392d4341363232304533433244351802223e0a320a244533
+  4339313034302d464233332d343843442d423137342d453745423637413636354539120a0d0000954315008060441208080110fe979483062a24343845424131
+  30322d373535442d343733342d383645352d424436313932383643433142510ab72a068f157a425a2430444345433039422d303046372d344637432d39433038
+  2d44323135354532333245344268f0ab93ed9bedb09e0e70ad8acfbf9134800118
+  decoded body:
+    1: "99B9E77B-7D0B-44F4-BE3E-14F753A78C70"
+    2: "C038FFA4-D9A3-4E36-9159-CA6220E3C2D5"
+    3: 2
+    4 {
+      1 {
+        1: "E3C91040-FB33-48CD-B174-E7EB67A665E9"
+        2 {
+          1: fixed 00009543
+          2: fixed 00806044
+        }
+      }
+      2 {
+        1: 1
+        2: 1617234942
+      }
+    }
+    5: "48EBA102-755D-4734-86E5-BD619286CC1B"
+    10: double 1792493511339.44
+    11: "0DCEC09B-00F7-4F7C-9C08-D2155E232E4B"
+    13: 1025909674054309360
+    14: 1791403214125
+    16: 24
+
+=== 133 commentCreated (297 bytes, full Event record incl. field 1 aggregateId)
+  0a2434384542413130322d373535442d343733342d383645352d424436313932383643433142aa08ff010a2434384542413130322d373535442d343733342d38
+  3645352d424436313932383643433142122439394239453737422d374430422d343446342d424533452d3134463735334137384337301a244330333846464134
+  2d443941332d344533362d393135392d43413632323045334332443522150a090a07636f6c6f7265641208080110978eb58a0e280132215f3965646635343236
+  3730636532393865353666326433363831313834376462303a0d5461796c6f72204e696c73656e5150f12a068f157a425a2435314344443341382d464544462d
+  343832332d393232342d32314343364332373235433068f0ab93ed9bedb09e0e70ae8acfbf91347818
+  decoded body:
+    1: "48EBA102-755D-4734-86E5-BD619286CC1B"
+    2: "99B9E77B-7D0B-44F4-BE3E-14F753A78C70"
+    3: "C038FFA4-D9A3-4E36-9159-CA6220E3C2D5"
+    4 {
+      1 {
+        1: "colored"
+      }
+      2 {
+        1: 1
+        2: 3779938071
+      }
+    }
+    5: 1
+    6: "_9edf542670ce298e56f2d36811847db0"
+    7: "Taylor Nilsen"
+    10: double 1792493511343.082
+    11: "51CDD3A8-FEDF-4823-9224-21CC6C2725C0"
+    13: 1025909674054309360
+    14: 1791403214126
+    15: 24
