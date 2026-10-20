@@ -483,15 +483,17 @@ ALLOW_TEST_FIXTURE = False
 
 
 def _comment_text(body: Msg) -> str:
-    """Text of a commentCreated/Edited body: 4 {1 RichText, 2 stamp} (or a plain string)."""
+    """Text of a commentCreated/Edited body: 4 {1 segment {1 text, 2 style, 3 paragraph}, 2 stamp}.
+    Files from earlier versions of this library hold a plain string there instead."""
     content = body.sub(4)
     if content is None:
         return body.str(4, "")
     raw = content.bytes(1) or b""
     try:
-        rich = Msg.parse(raw)  # a copy: sub() would turn a plain-string field into a message in place
-        if rich.sub(1) is not None and rich.sub(1).has(1):
-            return RichText(rich).text
+        seg = Msg.parse(raw)  # a copy: sub() would turn a plain-string field into a message in place
+        text = seg.get(1)
+        if isinstance(text, (bytes, bytearray)) and raw[:1] == b"\n":
+            return text.decode("utf-8")
     except Exception:
         pass
     return raw.decode("utf-8", "replace")
@@ -2946,7 +2948,7 @@ class Document:
         cb.set_bytes(1, cid)
         cb.set_bytes(2, thread)
         cb.set_bytes(3, self.doc_id)
-        cb.set_bytes(4, lww(rich_text(text).msg))  # content is rich text, not a string
+        cb.set_bytes(4, lww(Msg([[1, LEN, text.encode()]])))  # content: one text segment {1 text}
         cb.set_bytes(5, lww(key_between(None, None)))
         cb.set_bytes(6, author_id)
         cb.set_bytes(7, author)

@@ -108,6 +108,9 @@ class NewDocumentTest(unittest.TestCase):
             self.assertEqual([x["text"] for x in c["comments"]], ["First!", "Reply"])
             self.assertEqual((c["position"], c["resolved"]), ((100.0, 200.0), True))
             self.assertIs(c["page"], b0)
+            # the content form GoodNotes displays (import round 6, 08t): {1 {1 text}, 2 stamp}
+            body = next(e.sub(133) for e in back.events if e.sub(133) is not None)
+            self.assertEqual(body.sub(4).bytes(1), b"\x0a\x06First!")
 
     def test_page_operations(self):
         doc = Document.new("Pages", pages=1)
