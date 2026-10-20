@@ -416,6 +416,22 @@ def stamp(counter: int = 1) -> Msg:
     return m
 
 
+def lww(value, counter: int = 0) -> Msg:
+    """{1 value, 2 stamp}: the last-writer-wins register GoodNotes keeps
+    page and document attributes in."""
+    m = Msg()
+    if isinstance(value, (bytes, str, Msg)):
+        m.set_bytes(1, value)
+    elif isinstance(value, bool):
+        if value:
+            m.set_int(1, 1)
+    elif isinstance(value, int):
+        if value:
+            m.set_int(1, value)
+    m.set_bytes(2, stamp(counter))
+    return m
+
+
 def read_color(m: Msg | None, default=(0.0, 0.0, 0.0, 1.0)) -> tuple:
     """RGBA from {1 r, 2 g, 3 b, 4 a}. Proto3 drops zero fields, so a
     missing channel is 0 — including alpha, though GoodNotes always writes
@@ -1037,7 +1053,7 @@ class Page:
 
 
 _FIXTURE_MSG = ("this is the fake test document from tests/synthetic.py, which GoodNotes can't "
-                "open. Use a notebook exported from GoodNotes as the base (File > Export > GoodNotes).")
+                "open. Start from Document.new() or a notebook exported from GoodNotes.")
 
 
 def _event_body(e: Msg) -> Msg | None:
@@ -1108,6 +1124,132 @@ class Document:
         if self.doc_id == FIXTURE_DOC_ID and not ALLOW_TEST_FIXTURE:
             raise ValueError(_FIXTURE_MSG)
 
+    @classmethod
+    def new(cls, title: str = "Untitled", template: str = "blank", color: str = "white",
+            size=paper.SIZES["standard"], pages: int = 1) -> "Document":
+        """A complete, importable document from nothing, on Essentials paper
+        (`paper.TEMPLATES` x `paper.COLORS`). Event bodies mirror a GoodNotes
+        6 macOS export field for field (tests/test_real_document.py)."""
+        did, tid, aid = new_uuid(), new_uuid(), new_uuid()
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+            z.writestr("schema.pb", Msg([[1, VARINT, SCHEMA_VERSION]]).encode())  # {1: version}
+            z.writestr("document.info.pb", b"")
+            z.writestr("index.notes.pb", b"")
+            z.writestr("index.attachments.pb", b"")
+            z.writestr("index.events.pb", b"")
+        buf.seek(0)
+        doc = cls(buf)
+        device = doc.device
+        now = time.time() * 1000
+
+        def tail(body, version_field=15):
+            body.set_double(10, now)
+            body.set_bytes(11, new_uuid())
+            body.set_bytes(12, b"")
+            body.set_int(13, device)
+            body.set_int(14, int(now))
+            body.set_int(version_field, SCHEMA_VERSION)
+            return body
+
+        folder = new_uuid()
+        created = Msg()
+        created.set_bytes(1, did)
+        created.set_bytes(2, lww(title, 1))
+        created.set_bytes(3, lww(folder, 1))
+        created.set_bytes(6, lww("P" if size[0] <= size[1] else "L", 1))
+        created.set_bytes(7, lww(folder, 1))
+        created.set_bytes(9, "auto")
+        tail(created, version_field=20)
+        created.set_bytes(17, b"")
+        created.set_bytes(18, b"")
+        created.set_bytes(19, Msg([[2, LEN, stamp(1)]]))
+        created.remove(12)
+        created.fields.sort(key=lambda f: f[0])
+        doc.events.append(Msg([[1, LEN, did.encode()], [30, LEN, created]]))
+        doc.add_attachment(paper.paper_pdf(template, color, size), aid)
+        tpl = Msg()
+        tpl.set_bytes(1, did)
+        tpl.set_bytes(2, tid)
+        tpl.set_bytes(4, aid)
+        tpl.set_int(5, 1)
+        tpl.set_int(6, 1)
+        tpl.set_double(7, 29.33333396911621)  # line spacing: 16 pt in page units
+        tpl.set_bytes(8, write_point(*size))
+        tpl.set_double(10, now)
+        tpl.set_bytes(11, new_uuid())
+        tpl.set_bytes(12, Msg([[1, I64, struct.pack("<d", 29.33333396911621)], [2, LEN, stamp(1)]]))
+        tpl.set_bytes(13, lww(True, 1))
+        tpl.set_int(15, device)
+        tpl.set_int(16, int(now))
+        tpl.set_bytes(17, lww(1, 1))
+        # textAreas: the typing area GoodNotes uses for full-page text (margins as on standard paper)
+        std = paper.SIZES["standard"]
+        mx, my = 44.0 * size[0] / std[0], 58.6667 * size[1] / std[1]
+        area = Msg([[1, LEN, Msg([[1, LEN, write_point(mx, my)], [2, LEN, write_point(size[0] - 2 * mx, size[1] - 2 * my)]])]])
+        area.set_float(2, 28.416668)
+        area.set_float(3, 0.9166667)
+        area.set_int(5, 2 if color == "black" else 1)  # 1 light / 2 dark paper
+        tpl.set_bytes(18, area)
+        tpl.set_bytes(19, Msg([[2, LEN, stamp(1)]]))
+        tpl.set_int(21, SCHEMA_VERSION)
+        doc.events.append(Msg([[1, LEN, tid.encode()], [2, LEN, tpl]]))
+        key = None
+        for _ in range(pages):
+            pid = new_uuid()
+            key = key_between(key, None)
+            pe = Msg()
+            pe.set_bytes(1, did)
+            pe.set_bytes(2, pid)
+            pe.set_bytes(3, lww(tid, 1))
+            pe.set_bytes(4, lww(key, 1))
+            tail(pe)
+            # canvasTemplate: canvas colors (dark/light) GoodNotes stores per page
+            canvas = Msg([[2, LEN, Msg([[1, LEN, write_color((0.8667, 0.8667, 0.8667, 1))],
+                                        [2, LEN, write_color((1, 1, 1, 1))]])]])
+            pe.set_bytes(17, Msg([[1, LEN, canvas], [2, LEN, stamp(1)]]))
+            doc.events.append(Msg([[1, LEN, pid.encode()], [54, LEN, pe]]))
+            nid = uuid_plus(pid)
+            doc._register_notes(nid, did)
+            doc.pages.append(Page(nid, [], pe, tpl))
+        cur = Msg()
+        cur.set_bytes(1, did)
+        cur.set_bytes(2, doc.pages[0].page_id)
+        cur.set_bytes(3, f"PagingViewServiceUpdater:{new_uuid()}")
+        doc.events.append(Msg([[1, LEN, did.encode()], [10, LEN, tail(cur)]]))
+        return doc
+
+    def _register_notes(self, nid: str, did: str) -> None:
+        """index.notes.pb entry, empty ink file and the index/link events
+        (105, 104, 102) GoodNotes writes for a page's notes group."""
+        now = time.time() * 1000
+        idx = Msg()
+        idx.set_bytes(1, nid)
+        idx.set_bytes(2, f"notes/{nid}")
+        self.files["index.notes.pb"] = self.files.get("index.notes.pb", b"") + write_delimited([idx])
+        self.files[f"notes/{nid}"] = b""
+        store = Msg()
+        store.set_int(1, 1)
+        store.set_bytes(2, did)
+        store.set_bytes(4, nid)
+        store.set_bytes(6, "auto")
+        self._event(105, nid, store)
+        ni = Msg()
+        ni.set_bytes(1, did)
+        ni.set_bytes(2, nid)
+        ni.set_double(10, now)
+        ni.set_bytes(11, new_uuid())
+        ni.set_bytes(13, "auto")
+        ni.set_int(14, 1)
+        ni.set_bytes(15, new_uuid())
+        ni.set_int(17, self.device)
+        ni.set_int(18, int(now))
+        ni.set_int(19, SCHEMA_VERSION)
+        self.events.append(Msg([[1, LEN, nid.encode()], [104, LEN, ni]]))
+        upd = Msg()
+        upd.set_bytes(1, nid)
+        self._event(102, nid, upd).sub(102).set_bytes(16, did)
+
     # attachments
     @property
     def attachments(self) -> dict[str, bytes]:
@@ -1170,7 +1312,9 @@ class Document:
         body.set_bytes(6, self.doc_id or new_uuid())
         body.set_double(10, now)
         body.set_bytes(11, new_uuid())
-        body.set_bytes(12, b"")
+        # ponytail: counts "/Type /Page" objects; fine for the generated one-page PDFs and most others
+        pages = len(re.findall(rb"/Type\s*/Page(?![s\w])", data)) or 1 if data[:4] == b"%PDF" else 1
+        body.set_bytes(12, Msg([[1, VARINT, 1], [2, VARINT, pages]]))  # pageRange {firstPage, numberOfPages}
         body.set_int(14, self.device)
         body.set_int(15, int(now))
         body.set_int(16, SCHEMA_VERSION)
@@ -1178,6 +1322,10 @@ class Document:
         ev.set_bytes(1, aid)
         ev.set_bytes(6, body)
         self.events.append(ev)
+        store = Msg()  # indexStoreUpdated for the attachment (search index)
+        store.set_bytes(2, self.doc_id or new_uuid())
+        store.set_bytes(3, aid)
+        self._event(105, aid, store)
         return aid
 
     # page structure
@@ -1209,7 +1357,7 @@ class Document:
         if like.layer is not None:
             mapping[like.layer.str(2).encode()] = new_uuid().encode()
         copies = []
-        structural = (2, 10, 54, 102, 104)  # layer, page added, page, notes created/linked
+        structural = (2, 10, 54, 102, 104, 105)  # layer, current page, page, notes updated/index/store
         for e in self._events_for(like):
             if not any(e.has(k) for k in structural):
                 continue  # bookmarks, outline entries, rotation stay with `like`
@@ -1221,11 +1369,14 @@ class Document:
         page_ev = next(_event_body(c) for c in copies if c.has(54))
         layer_ev = next((_event_body(c) for c in copies if c.sub(2) is not None and c.path(2).has(8)), None)
         page = Page(notes_id, [], page_ev, layer_ev)
-        idx = Msg()
-        idx.set_bytes(1, notes_id)
-        idx.set_bytes(2, f"notes/{notes_id}")
-        self.files["index.notes.pb"] = self.files.get("index.notes.pb", b"") + write_delimited([idx])
-        self.files[f"notes/{notes_id}"] = b""
+        if any(c.has(104) or c.has(105) for c in copies):
+            idx = Msg()
+            idx.set_bytes(1, notes_id)
+            idx.set_bytes(2, f"notes/{notes_id}")
+            self.files["index.notes.pb"] = self.files.get("index.notes.pb", b"") + write_delimited([idx])
+            self.files[f"notes/{notes_id}"] = b""
+        else:
+            self._register_notes(notes_id, self.doc_id or like.event.str(1))
         self.pages.append(page)
         self.move_page(page, len(self.pages) - 1 if index is None else index)
         return page
