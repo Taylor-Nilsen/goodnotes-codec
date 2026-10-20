@@ -482,6 +482,21 @@ FIXTURE_DOC_ID = "D0C00000-0000-4000-8000-000000000000"
 ALLOW_TEST_FIXTURE = False
 
 
+def _comment_text(body: Msg) -> str:
+    """Text of a commentCreated/Edited body: 4 {1 RichText, 2 stamp} (or a plain string)."""
+    content = body.sub(4)
+    if content is None:
+        return body.str(4, "")
+    raw = content.bytes(1) or b""
+    try:
+        rich = Msg.parse(raw)  # a copy: sub() would turn a plain-string field into a message in place
+        if rich.sub(1) is not None and rich.sub(1).has(1):
+            return RichText(rich).text
+    except Exception:
+        pass
+    return raw.decode("utf-8", "replace")
+
+
 def _audio_refs(r: Msg | None, by_id: dict) -> list:
     """[(seconds, Page)] from references {1 map<ref id, {1 timestampFlicks, 2 pageId}>}."""
     out = []
@@ -2885,20 +2900,18 @@ class Document:
                 if anchor is not None and anchor.sub(1) is not None and anchor.sub(1).has(1):
                     anchor = anchor.sub(1)  # written as an LWW register {1 anchor, 2 stamp}
                 page = by_id.get(anchor.str(1)) if anchor is not None else None
-                pin = None if anchor is None else (anchor.path(2, 1) or anchor.path(3, 5))  # region origin, or legacy sticky
+                pin = None if anchor is None else (anchor.sub(2) or anchor.path(3, 5))  # region point, or legacy sticky
                 pos = read_point(pin) if pin is not None else (0.0, 0.0)
                 threads[b.str(1)] = {"id": b.str(1), "page": page, "position": pos, "resolved": False, "comments": []}
             b = e.sub(133)
             if b is not None and b.str(2) in threads:
-                content = b.sub(4)
-                text = content.str(1, "") if content is not None else b.str(4, "")
+                text = _comment_text(b)
                 threads[b.str(2)]["comments"].append({"id": b.str(1), "author": b.str(7), "text": text})
             b = e.sub(134)
             if b is not None and b.str(2) in threads:
                 for c in threads[b.str(2)]["comments"]:
                     if c["id"] == b.str(1):
-                        content = b.sub(4)
-                        c["text"] = content.str(1, "") if content is not None else b.str(4, "")
+                        c["text"] = _comment_text(b)
             b = e.sub(135)
             if b is not None and b.str(2) in threads:
                 threads[b.str(2)]["comments"] = [c for c in threads[b.str(2)]["comments"] if c["id"] != b.str(1)]
@@ -2923,9 +2936,9 @@ class Document:
             tb.set_bytes(3, lww(key_between(None, None)))
             anchor = Msg()
             anchor.set_bytes(1, page.page_id)
-            # region {1 origin, 2 size} pins the comment. (A stickyNote in field 3 is the legacy
-            # sticky comment: GoodNotes turns it into a sticky item and erases the thread.)
-            anchor.set_bytes(2, Msg([[1, LEN, write_point(*position)], [2, LEN, write_point(1.0, 1.0)]]))
+            # region is the pin point {1 x, 2 y}. (A stickyNote in field 3 is the legacy sticky
+            # comment: GoodNotes turns it into a sticky item and erases the thread.)
+            anchor.set_bytes(2, write_point(*position))
             tb.set_bytes(4, lww(anchor))
             tb.set_bytes(5, cid)
             self._event(130, thread, tb, version_field=16)
@@ -2933,7 +2946,7 @@ class Document:
         cb.set_bytes(1, cid)
         cb.set_bytes(2, thread)
         cb.set_bytes(3, self.doc_id)
-        cb.set_bytes(4, lww(text))
+        cb.set_bytes(4, lww(rich_text(text).msg))  # content is rich text, not a string
         cb.set_bytes(5, lww(key_between(None, None)))
         cb.set_bytes(6, author_id)
         cb.set_bytes(7, author)

@@ -164,14 +164,13 @@ def make_testkit(directory, only=None) -> list[str]:
         d.add_comment(d.pages[0], (200, 200), "a comment", author="Taylor")
     kits["08e_comment"] = comment
 
-    def _region_comment(d, region):
-        """Round 5: 08e's region {1 origin, 2 size} vs other region encodings."""
-        from .model import Msg, lww, new_uuid, key_between
+    def _content_comment(d, content):
+        """Round 6: 08e writes content as rich text; these try other content messages."""
+        from .model import Msg, lww, write_point, new_uuid, key_between
         thread, cid = new_uuid(), new_uuid()
         anchor = Msg()
         anchor.set_bytes(1, d.pages[0].page_id)
-        if region is not None:
-            anchor.set_bytes(2, region)
+        anchor.set_bytes(2, write_point(200.0, 200.0))
         tb = Msg()
         tb.set_bytes(1, thread)
         tb.set_bytes(2, d.doc_id)
@@ -183,16 +182,14 @@ def make_testkit(directory, only=None) -> list[str]:
         cb.set_bytes(1, cid)
         cb.set_bytes(2, thread)
         cb.set_bytes(3, d.doc_id)
-        cb.set_bytes(4, lww("a comment"))
+        cb.set_bytes(4, lww(content))
         cb.set_bytes(5, lww(key_between(None, None)))
         cb.set_bytes(7, "Taylor")
         d._event(133, cid, cb)
-    from .model import Msg as _Msg, write_point as _pt
-    kits["08p_comment_region_point"] = lambda d: _region_comment(d, _pt(200.0, 200.0))
-    kits["08q_comment_region_rect_40"] = lambda d: _region_comment(
-        d, _Msg([[1, LEN, _pt(200.0, 200.0)], [2, LEN, _pt(40.0, 40.0)]]))
-    kits["08r_comment_region_wrapped"] = lambda d: _region_comment(
-        d, _Msg([[1, LEN, _Msg([[1, LEN, _pt(200.0, 200.0)], [2, LEN, _pt(1.0, 1.0)]])]]))
+    from .model import Msg as _Msg
+    # rich text with one bare segment (no attributes) / a {1 text} wrapper
+    kits["08s_comment_rich_bare"] = lambda d: _content_comment(d, _Msg([[1, LEN, _Msg([[1, LEN, b"a comment"]])]]))
+    kits["08t_comment_text_wrapper"] = lambda d: _content_comment(d, _Msg([[1, LEN, b"a comment"]]))
 
     def erase(d):
         p = d.pages[0]
