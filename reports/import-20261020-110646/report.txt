@@ -1,0 +1,50 @@
+GoodNotes import report — round 8 — 2026-10-20 11:06 UTC
+Branch feat/full-format @ 3037b8b, python3 -m unittest: 42 OK.
+Kit: testkit --only 13,14,08f,05b (13a, 13b, 14, 08f, 05b). All imported via background accessibility
+into "Test". Page screenshots taken in the background (Go > Jump to page…, screencapture -l).
+Comments panel + PDF exports done in one full-screen batch after HIDIdleTime >= 120 s
+(11:11-11:12 UTC), then screen handed back. All five notebooks moved to GoodNotes trash (deleted=1).
+No crash reports.
+
+Summary
+  file                   result    pages  check                                         verdict
+  13a_paper_templates    IMPORTED  15     pattern + paper colour per page              15/15 match
+  13b_paper_sizes        IMPORTED  3      size/orientation + pattern + colour          3/3 match
+  14_backgrounds         IMPORTED  3      PNG / PDF-page / copied-paper backgrounds    3/3 match
+  08f_comment_resolved   IMPORTED  1      resolved thread hidden, open thread open     match (see note)
+  05b_text_alignment     IMPORTED  1      paragraph alignment                          MISMATCH (off by one)
+
+Import evidence (app log "Bulk imported N events" + "Ended import background task. reason=
+import-operation-completed"): 13a 64 events, 13b 16, 14 16, 08f 13, 05b 7.
+
+13a (13a_p01..p15.png, 13a_paper_templates.pdf — 15 pages, 455x588 pt, same 834x1079 ratio)
+  p1 blank/white, p2 dotted/white, p3 narrow_ruled/white, p4 squared/white, p5 wide_ruled/white,
+  p6 blank/yellow, p7 dotted/yellow, p8 narrow_ruled/yellow, p9 squared/yellow, p10 wide_ruled/yellow,
+  p11 blank/black, p12 dotted/black, p13 narrow_ruled/black, p14 squared/black, p15 wide_ruled/black
+  — all match their labels (yellow = GoodNotes cream, black = GoodNotes dark grey).
+  Cosmetic: on black pages the label text is dark on dark and barely readable.
+13b (13b_p01..p03.png)
+  p1 "A4 landscape, wide ruled, yellow": landscape 1543x1091 (A4 ratio), wide ruled, cream — match.
+  p2 "Letter portrait, dotted, white": portrait 1122x1452 (Letter ratio), dots on white — match.
+     (capture shows the page middle; the label is visible at the bottom of 13b_p01.png)
+  p3 "custom 900 x 1200, squared, black": portrait 3:4, squared on dark — match.
+14 (14_p01..p03.png, 14_backgrounds.pdf — 3 pages)
+  p1 "PNG background: solid blue, stretched over the whole page" — whole page blue, match.
+  p2 "PDF page 2 as background: squared paper with one thick red line" — match.
+  p3 "paper copied from another notebook: dotted on black" — match.
+08f (08f_page.png, 08f_open_thread_panel.png)
+  projection: thread 69C78286 pos 1 is_resolved=1 at (200,300), comments "resolved thread" (pos 1)
+  + "a reply" (pos 2); thread A45FBBFB pos 2 is_resolved=0 at (500,600), comment "open thread".
+  Page: only one marker, at ~(497,595) = the open thread; the resolved thread has no marker.
+  Panel for the open thread: "Taylor / open thread"; its "…" menu offers "Resolve" -> it is open.
+  Note: GoodNotes for Mac has no list of resolved comments (sidebar = Pages/Outline/Audio only), so
+  the resolved thread and its reply can't be shown in the UI; they are present in the projection.
+05b (05b_page.png) — MISMATCH
+  "left aligned paragraph" -> left (ok); "centered paragraph" -> LEFT; "right aligned paragraph" ->
+  CENTERED; "justified paragraph…" -> RIGHT-aligned (both lines flush right).
+  We write center=1, right=2, justify=3 (model.py ALIGN). GoodNotes renders 1 as left, 2 as center,
+  3 as right -> its enum is shifted by one (likely 0 natural, 1 left, 2 center, 3 right, 4 justified).
+
+Needs your eyes
+- 05b: confirm the alignment enum with a hand-made GoodNotes text box (left/center/right/justify).
+- 08f: if you need visual proof of the resolved thread + reply, check on iPad (Mac hides resolved).
