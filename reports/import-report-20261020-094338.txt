@@ -1,0 +1,64 @@
+GoodNotes import report — 2026-10-20 09:43 UTC
+Branch feat/full-format @ a7b8148, python3 -m unittest: 30 OK.
+Kit: python3 -m goodnotes testkit <tmp>; GoodNotes for Mac (Catalyst), running throughout (pid 4839).
+
+Method
+- open -g -a Goodnotes <file> with the library's "Test" folder open. GoodNotes shows an
+  "Import to Goodnotes" sheet (location: Test); "Import to 'Test'" was pressed via background
+  accessibility (app never brought to front).
+- Evidence from GoodNotes' own app log
+  (~/Library/Containers/com.goodnotesapp.x/Data/Documents/Logs/logs/*.log), which is far more
+  useful than `log show` (unified log only shows the error lines, not the import flow).
+- Landing check, read-only: copy of Library/Databases/projection.sqlite, diff of documents.id
+  before/after each import; pages / comment_thread / comment / audioNote counts for new ids.
+- Every imported notebook was looked at on screen, then moved to GoodNotes trash before the next
+  import (verified deleted=1 in projection). Rejected imports are tombstoned by GoodNotes itself.
+- No crash reports in ~/Library/Logs/DiagnosticReports for the whole run.
+- PDF export was not possible in the background (save-panel confirmation needs full-screen
+  control); visual check was done on GoodNotes' own render of the page instead.
+
+Results
+08c_labels_read                      IMPORTED
+  Bulk imported 8 events; new doc 5D245DE8 (1 page). Renders like the base page.
+  (First attempt only appeared stuck: the import sheet was waiting for a click.)
+08e_comment                          REJECTED
+  "Error importing GN5 Document: invalidUTF8" (SwiftProtobuf.BinaryDecodingError 2);
+  partial doc tombstoned. UI alert "Unable to import".
+08f_comment_thread_only              IMPORTED
+  Bulk imported 8 events; doc 05FE00C4, 1 page, comment_thread=1, comment=0.
+08g_comment_thread_unwrapped         REJECTED   truncated (BinaryDecodingError 1)
+08h_comment_thread_minimal_unwrapped REJECTED   malformedProtobuf (BinaryDecodingError 3)
+08i_comment_plain_strings            REJECTED   invalidUTF8 (BinaryDecodingError 2)
+08j_comment_wrapped_no_author        REJECTED   invalidUTF8 (BinaryDecodingError 2)
+10a_audio_note_with_page_refs        REJECTED   malformedProtobuf (BinaryDecodingError 3)
+10b_audio_note_plain                 IMPORTED
+  9 events; doc D3E411CC, 1 page, audioNote=1 (references stored as "{}").
+10c_audio_note_page_refs_no_name     REJECTED   malformedProtobuf (BinaryDecodingError 3)
+10d_audio_note_name_no_refs          IMPORTED
+  10 events; doc 8C493E91, audioNote=1, audioName non-empty, references "{}".
+10e_audio_refs_wrapped               REJECTED   invalidUTF8 (BinaryDecodingError 2)
+10f_audio_refs_repeated_field        IMPORTED
+  9 events; doc 98CFF56F, audioNote=1, audioName set, BUT references stored as "{}" —
+  the refs were accepted on the wire but did not survive into the projection.
+10g_audio_name_plain_string          REJECTED   malformedProtobuf (BinaryDecodingError 3)
+04_pencil                            IMPORTED
+  7 events; doc AECAEAE4, 1 page. One sine stroke, very light grey, thin, smooth.
+12_pencil_variants                   IMPORTED
+  7 events; doc CC7FFDC7, 1 page. Four sine strokes; all show pencil grain:
+  light / wide soft / dark / light-to-dark pressure ramp.
+
+What this narrows down
+- Comments: a thread alone (08f) imports; every variant that adds a comment record fails
+  (08e/08i/08j invalidUTF8 regardless of author or wrapping). The unwrapped thread anchor
+  variants (08g/08h) break the thread itself. Suspect a bytes/message field in the comment
+  that GoodNotes declares as `string` (content or position).
+- Audio: name alone imports (10d); any page-refs encoding except the flat repeated field
+  fails; 10f imports but refs end up empty, so the field number/type is still wrong.
+  Plain-string name (10g) is malformed -> name must stay wrapped as in 10d.
+
+Needs your eyes
+- 04_pencil: stroke is very faint and shows no visible grain at screen zoom — compare to a
+  real GoodNotes pencil stroke at the same colour/width.
+- 12_pencil_variants: grain looks right in all four; confirm widths/opacity match real ones.
+- 10f: confirm in the audio panel whether the recording shows any page links (projection says no).
+- 08f: thread-only comment has no visible marker on the page; check the comments panel.
