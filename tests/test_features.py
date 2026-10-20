@@ -34,7 +34,7 @@ def reload(doc, d):
 
 class NewDocumentTest(unittest.TestCase):
     def test_new_document_is_complete(self):
-        doc = Document.new("Hello", pages=3, paper="dotted")
+        doc = Document.new("Hello", "dotted", pages=3)
         self.assertEqual(len(doc.pages), 3)
         self.assertEqual(doc.title, "Hello")
         self.assertEqual(doc.files["schema.pb"], b"\x08\x18")  # {1: 24}

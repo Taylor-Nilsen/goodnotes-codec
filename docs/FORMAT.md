@@ -206,6 +206,16 @@ last-writer-wins registers `{1 value, 2 stamp {1 counter, 2 random}}`.
 | 210–216 transcriptions | `210: 3 audioId, 4 audioStart, 5 audioEnd, 6 locale, 7 text` |
 | 130–137 comments | `130: 3 position, 4 anchor {1 pageId, 2 region, 3 stickyNote {1 expanded, 2 color, 3 size, 4 rotation, 5 position, 6 showAuthor}}, 5 firstCommentId`; `133: 4 content, 6 authorId, 7 authorName`; 132 `3 isResolved` |
 
+**Paper.** Built-in paper is a PDF attachment like any background; layer
+field 9 names it `<template id>_standard_1_<color> - <Name>` (color 1 yellow,
+2 white, 3 black). The PDF is 6/11 of the page size (Standard: 455.04 x 588.45
+pt for 834.24 x 1078.825). Layer 7 is the line spacing and 18 `{1 {origin,
+size} writing area, 2 spacing minus line width, 3 line width, 5 1 light / 2 dark}`, all in page units.
+Essentials geometry, in PDF points from the top-left: dotted r 0.5 dots every
+16; squared 0.5 lines ending on every 16; narrow ruled 0.5 rules every 17.5
+from 50; wide ruled every 25 from 49.5. Lines are 0.816/0.824/0.827 on white
+(1) and yellow (0.973/0.969/0.914), 0.345/0.349/0.357 on black (0.2).
+
 Times in audio events are flicks (1/705,600,000 s). **Page order** is the
 page events' order keys compared as ASCII strings; the ink for a page
 lives in `notes/<page id + 1>` (or in the group named by its 104/105

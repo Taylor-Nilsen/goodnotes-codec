@@ -21,7 +21,9 @@ were cross-checked against documents built in the macOS app.
 """
 from __future__ import annotations
 
+import io
 import math
+import os
 import random
 import re
 import struct
@@ -30,6 +32,7 @@ import uuid as uuidlib
 import zipfile
 
 from . import schema as S
+from . import paper
 from .lz4_block import decompress_block
 
 # --- lossless protobuf -------------------------------------------------------
@@ -424,6 +427,22 @@ def stamp(counter: int = 1) -> Msg:
     return m
 
 
+def lww(value, counter: int = 0) -> Msg:
+    """{1 value, 2 stamp}: the last-writer-wins register GoodNotes keeps
+    page and document attributes in."""
+    m = Msg()
+    if isinstance(value, (bytes, str, Msg)):
+        m.set_bytes(1, value)
+    elif isinstance(value, bool):
+        if value:
+            m.set_int(1, 1)
+    elif isinstance(value, int):
+        if value:
+            m.set_int(1, value)
+    m.set_bytes(2, stamp(counter))
+    return m
+
+
 def read_color(m: Msg | None, default=(0.0, 0.0, 0.0, 1.0)) -> tuple:
     """RGBA from {1 r, 2 g, 3 b, 4 a}. Proto3 drops zero fields, so a
     missing channel is 0 — including alpha, though GoodNotes always writes
@@ -456,6 +475,11 @@ def write_point(x: float, y: float) -> Msg:
 
 SCHEMA_VERSION = 24  # stamped on every record GoodNotes writes (field 16/18/21/...)
 DJB2_EMPTY = 5381
+
+# tests/fake_document.py builds a fake document with this id. GoodNotes can't open
+# it, so Document refuses it unless the test suite flips the flag below.
+FIXTURE_DOC_ID = "D0C00000-0000-4000-8000-000000000000"
+ALLOW_TEST_FIXTURE = False
 
 
 # --- page items ------------------------------------------------------------
@@ -2056,6 +2080,10 @@ class Page:
         return f"<Page {self.key!r} {self.uuid} {len(self.records)} records>"
 
 
+_FIXTURE_MSG = ("this is the fake test document from tests/fake_document.py, which GoodNotes can't "
+                "open. Start from Document.new() or a notebook exported from GoodNotes.")
+
+
 def _event_body(e: Msg) -> Msg | None:
     """An event is {1: target id, N: body}; returns body (N varies by type)."""
     for f in e.fields:
@@ -2231,21 +2259,19 @@ class Document:
             self.pages.append(Page(uid, [Msg.parse(m) for m in iter_delimited(data)], ev, layer))
         if all(p.event is not None for p in self.pages):
             self.pages.sort(key=lambda p: p.key)
+        if self.doc_id == FIXTURE_DOC_ID and not ALLOW_TEST_FIXTURE:
+            raise ValueError(_FIXTURE_MSG)
 
     @classmethod
-    def new(cls, title: str = "Untitled", size=STANDARD, paper: str | bytes = "plain",
-            pages: int = 1, spacing: float = 36.0) -> "Document":
-        """A fresh document with `pages` pages of the given paper: 'plain',
-        'lined', 'grid', 'dotted', or the bytes of a one-page PDF."""
-        import io
+    def new(cls, title: str = "Untitled", template: str = "blank", color: str = "white",
+            size=paper.SIZES["standard"], pages: int = 1) -> "Document":
+        """A complete, importable document from nothing, on Essentials paper
+        (`paper.TEMPLATES` x `paper.COLORS`). Event bodies mirror a GoodNotes
+        6 macOS export field for field (tests/test_real_document.py)."""
         did, tid, aid = new_uuid(), new_uuid(), new_uuid()
-        pdf = paper if isinstance(paper, (bytes, bytearray)) else paper_pdf(size, paper, spacing)
-        if isinstance(paper, (bytes, bytearray)):
-            pts = pdf_pages(pdf)[0]
-            size = (pts[0] * UNITS_PER_PT, pts[1] * UNITS_PER_PT)
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-            z.writestr("schema.pb", Msg([[1, VARINT, S.SCHEMA_VERSION]]).encode())  # {1: version}
+            z.writestr("schema.pb", Msg([[1, VARINT, SCHEMA_VERSION]]).encode())  # {1: version}
             z.writestr("document.info.pb", b"")
             z.writestr("index.notes.pb", b"")
             z.writestr("index.attachments.pb", b"")
@@ -2255,16 +2281,15 @@ class Document:
         device = doc.device
         now = time.time() * 1000
 
-        def tail(body, ids=(13, 14, 15), version_field=15):
+        def tail(body, version_field=15):
             body.set_double(10, now)
             body.set_bytes(11, new_uuid())
             body.set_bytes(12, b"")
-            body.set_int(ids[0], device)
-            body.set_int(ids[1], int(now))
-            body.set_int(version_field, S.SCHEMA_VERSION)
+            body.set_int(13, device)
+            body.set_int(14, int(now))
+            body.set_int(version_field, SCHEMA_VERSION)
             return body
 
-        # Event bodies mirror a GoodNotes 6 macOS export field for field.
         folder = new_uuid()
         created = Msg()
         created.set_bytes(1, did)
@@ -2280,34 +2305,32 @@ class Document:
         created.remove(12)
         created.fields.sort(key=lambda f: f[0])
         doc.events.append(Msg([[1, LEN, did.encode()], [30, LEN, created]]))
-        doc.add_attachment(pdf, aid)
+        doc.add_attachment(paper.paper_pdf(template, color, size), aid)
         tpl = Msg()
         tpl.set_bytes(1, did)
         tpl.set_bytes(2, tid)
         tpl.set_bytes(4, aid)
         tpl.set_int(5, 1)
         tpl.set_int(6, 1)
-        tpl.set_double(7, spacing * UNITS_PER_PT if isinstance(paper, str) and paper == "lined" else 29.33333396911621)
+        tpl.set_double(7, 29.33333396911621)  # line spacing: 16 pt in page units
         tpl.set_bytes(8, write_point(*size))
         tpl.set_double(10, now)
         tpl.set_bytes(11, new_uuid())
-        lh = Msg()
-        lh.set_double(1, tpl.float(7))
-        lh.set_bytes(2, stamp(1))
-        tpl.set_bytes(12, lh)
+        tpl.set_bytes(12, Msg([[1, I64, struct.pack("<d", 29.33333396911621)], [2, LEN, stamp(1)]]))
         tpl.set_bytes(13, lww(True, 1))
         tpl.set_int(15, device)
         tpl.set_int(16, int(now))
         tpl.set_bytes(17, lww(1, 1))
         # textAreas: the typing area GoodNotes uses for full-page text (margins as on standard paper)
-        mx, my = 44.0 * size[0] / STANDARD[0], 58.6667 * size[1] / STANDARD[1]
+        std = paper.SIZES["standard"]
+        mx, my = 44.0 * size[0] / std[0], 58.6667 * size[1] / std[1]
         area = Msg([[1, LEN, Msg([[1, LEN, write_point(mx, my)], [2, LEN, write_point(size[0] - 2 * mx, size[1] - 2 * my)]])]])
         area.set_float(2, 28.416668)
         area.set_float(3, 0.9166667)
-        area.set_int(5, 1)
+        area.set_int(5, 2 if color == "black" else 1)  # 1 light / 2 dark paper
         tpl.set_bytes(18, area)
         tpl.set_bytes(19, Msg([[2, LEN, stamp(1)]]))
-        tpl.set_int(21, S.SCHEMA_VERSION)
+        tpl.set_int(21, SCHEMA_VERSION)
         doc.events.append(Msg([[1, LEN, tid.encode()], [2, LEN, tpl]]))
         key = None
         for _ in range(pages):
@@ -2359,7 +2382,7 @@ class Document:
         ni.set_bytes(15, new_uuid())
         ni.set_int(17, self.device)
         ni.set_int(18, int(now))
-        ni.set_int(19, S.SCHEMA_VERSION)
+        ni.set_int(19, SCHEMA_VERSION)
         self.events.append(Msg([[1, LEN, nid.encode()], [104, LEN, ni]]))
         upd = Msg()
         upd.set_bytes(1, nid)
@@ -2370,7 +2393,7 @@ class Document:
         """A document whose pages are the pages of a PDF (File > Import)."""
         sizes = pdf_pages(data)
         first = (sizes[0][0] * UNITS_PER_PT, sizes[0][1] * UNITS_PER_PT)
-        doc = cls.new(title, first, data[:0] + paper_pdf(first, "plain"), pages=1)
+        doc = cls.new(title, size=first)
         aid = doc.add_attachment(data)
         for n, (w, h) in enumerate(sizes):
             page = doc.pages[0] if n == 0 else doc.add_page(doc.pages[0])
@@ -2562,23 +2585,48 @@ class Document:
                 new.append(c)
         return new
 
-    def set_background(self, page: Page, data: bytes, pdf_page: int = 1,
-                       size: tuple[float, float] | None = None, fit: bool = True) -> str:
-        """Replaces a page's paper with a PDF (or image) attachment.
-        `size` resizes the page; with fit=True a PDF's own page size is
-        used, otherwise the page keeps its size."""
-        aid = self.add_attachment(data)
+    def set_background(self, page: Page, source, pdf_page: int = 1, size=None,
+                       landscape: bool | None = None) -> str:
+        """Replaces a page's paper with a custom background and returns its
+        attachment id. `source` is PDF/PNG/JPEG bytes (other image formats
+        need Pillow), a path to such a file or to a .goodnotes, or a
+        `Document`. `pdf_page` (1-based) picks the PDF page, or for a
+        notebook the page whose paper to copy.
+
+        `size` is the new page size in page units: any (w, h), e.g.
+        `paper.SIZES["a4"]`; default keeps the page's size. `landscape`
+        True/False turns it that way. The background is drawn over the
+        whole page at that size."""
+        if isinstance(source, (str, os.PathLike)):
+            with open(source, "rb") as f:
+                source = f.read()
+        if isinstance(source, bytes) and source[:4] == b"PK\x03\x04":
+            source = Document(io.BytesIO(source))
+        if isinstance(source, Document):
+            src = source.pages[pdf_page - 1]
+            aid, pdf_page = src.background
+            if aid is None:
+                raise ValueError(f"page {src} has no background attachment")
+            source = source.attachments[aid]
+        size = paper.oriented(size or page.size, landscape)
+        if source[:4] != b"%PDF":
+            source, pdf_page = paper.image_pdf(source, size), 1
+        aid = self.add_attachment(source)
         layer = page.layer
         layer.set_bytes(4, aid)
         layer.set_int(5, pdf_page)
-        layer.remove(9)  # template library id: no longer a built-in paper
-        if size is None and fit and data[:4] == b"%PDF":
-            sizes = pdf_pages(data)
-            w, h = sizes[min(pdf_page - 1, len(sizes) - 1)]
-            size = (w * UNITS_PER_PT, h * UNITS_PER_PT)
-        if size is not None:
-            layer.set_bytes(8, write_point(*size))
+        layer.remove(9)  # template name: no longer a built-in paper
+        layer.set_bytes(8, write_point(*size))
         return aid
+
+    def set_paper(self, page: Page, template: str = "blank", color: str = "white", size=None,
+                  landscape: bool | None = None) -> str:
+        """GoodNotes Essentials paper (`paper.TEMPLATES`: blank, dotted,
+        squared, narrow_ruled, wide_ruled; `paper.COLORS`: white, yellow,
+        black), generated for the page's size. `size`/`landscape` as in
+        `set_background`."""
+        size = paper.oriented(size or page.size, landscape)
+        return self.set_background(page, paper.paper_pdf(template, color, size), size=size)
 
     def import_pdf(self, data: bytes, index: int | None = None) -> list[Page]:
         """Appends (or inserts at `index`) one page per PDF page."""
@@ -2901,7 +2949,60 @@ class Document:
         body.set_bytes(3, lww(bool(resolved), 1))
         self._event(132, thread, body)
 
+    def problems(self) -> list[str]:
+        """Reasons GoodNotes would fail to open or would drop content from
+        this document; empty when it's fine. `save` refuses unless empty."""
+        out = []
+        if self.doc_id is None:
+            out.append("no document event (30): this isn't a GoodNotes document")
+        elif self.doc_id == FIXTURE_DOC_ID and not ALLOW_TEST_FIXTURE:
+            out.append(_FIXTURE_MSG)
+        if not self.pages:
+            out.append("no pages")
+        indexed = {Msg.parse(m).str(1) for m in iter_delimited(self.files.get("index.notes.pb", b""))}
+        registered = {Msg.parse(m).str(1) for m in iter_delimited(self.files.get("index.attachments.pb", b""))}
+        announced = {e.str(1) for e in self.events if e.has(6)}
+        keys = [p.key for p in self.pages]
+        if len(set(keys)) != len(keys):
+            out.append("two pages share an order key, so page order is undefined")
+        for n, p in enumerate(self.pages, 1):
+            if p.event is None or p.layer is None:
+                out.append(f"page {n}: no page/paper event in index.events.pb")
+            if p.uuid not in indexed:
+                out.append(f"page {n}: missing from index.notes.pb")
+            used = [p.background[0]] if p.layer is not None and p.background[0] else []
+            for it in p.items:
+                if not it.deleted and it.kind == "image" and it.body.str(4):
+                    used.append(it.body.str(4))
+            for aid in used:
+                for ok, where in ((f"attachments/{aid}" in self.files, "zip"),
+                                  (aid in registered, "index.attachments.pb"),
+                                  (aid in announced, "an attachment event (6)")):
+                    if not ok:
+                        out.append(f"page {n}: attachment {aid} missing from {where}")
+        return out
+
     def save(self, path) -> None:
+        """Writes the file, refusing (ValueError) when `problems()` finds
+        anything, and re-reads it before it replaces `path`."""
+        bad = self.problems()
+        if bad:
+            raise ValueError("not saving, GoodNotes won't open this:\n  " + "\n  ".join(bad))
+        if not isinstance(path, (str, os.PathLike)):
+            self._write(path)  # a file object: nothing to replace
+            return
+        tmp = f"{path}.tmp"
+        try:
+            self._write(tmp)
+            again = Document(tmp)
+            if [p.uuid for p in again.pages] != [p.uuid for p in self.pages] or again.problems():
+                raise ValueError("saved file doesn't read back the same; not saving")
+            os.replace(tmp, path)
+        finally:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+
+    def _write(self, path: str) -> None:
         files = dict(self.files)
         files["index.events.pb"] = write_delimited(self.events)
         for p in self.pages:

@@ -1,7 +1,7 @@
 """Command line: python -m goodnotes <command> ...
 
   info DOC.goodnotes                      pages, items, outline, audio, comments
-  new OUT.goodnotes [--title T] [--paper plain|lined|grid|dotted] [--pages N] [--size WxH]
+  new OUT.goodnotes [--title T] [--paper blank|dotted|squared|narrow_ruled|wide_ruled] [--color white|yellow|black] [--pages N] [--size WxH]
   from-pdf IN.pdf OUT.goodnotes           one page per PDF page
   export-svg DOC.goodnotes PAGE OUT.svg
   export-pdf DOC.goodnotes OUT.pdf [--pages 0,2-4]
@@ -15,6 +15,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from . import paper
 from .model import Document, STANDARD, dump
 
 
@@ -355,7 +356,7 @@ def make_testkit(directory, only=None) -> list[str]:
     for name, build in kits.items():
         if only and not any(name.startswith(o) for o in only):
             continue
-        doc = Document.new(name, paper="lined")
+        doc = Document.new(name, "narrow_ruled")
         build(doc)
         # every kit page gets a marker stroke, so an empty-looking import means something was lost
         doc.pages[0].append(new_stroke(doc, [("M", (700, 40)), ("L", (780, 40)), ("L", (740, 90)), ("L", (700, 40))],
@@ -382,7 +383,8 @@ def main(argv=None):
     p = sp.add_parser("new")
     p.add_argument("out")
     p.add_argument("--title", default="Untitled")
-    p.add_argument("--paper", default="plain", choices=["plain", "lined", "grid", "dotted"])
+    p.add_argument("--paper", default="blank", choices=sorted(paper.TEMPLATES))
+    p.add_argument("--color", default="white", choices=sorted(paper.COLORS))
     p.add_argument("--pages", type=int, default=1)
     p.add_argument("--size", default=None, help="WxH in page units, e.g. 834.24x1078.825")
     p = sp.add_parser("from-pdf")
@@ -420,7 +422,7 @@ def main(argv=None):
         print(_info(Document(a.doc)))
     elif a.cmd == "new":
         size = tuple(float(v) for v in a.size.lower().split("x")) if a.size else STANDARD
-        Document.new(a.title, size, a.paper, a.pages).save(a.out)
+        Document.new(a.title, a.paper, a.color, size, a.pages).save(a.out)
     elif a.cmd == "from-pdf":
         data = Path(a.pdf).read_bytes()
         Document.from_pdf(data, a.title or Path(a.pdf).stem).save(a.out)

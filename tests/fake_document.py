@@ -13,9 +13,9 @@ export (File > Export > Goodnotes).
 """
 import zipfile
 
-from goodnotes.model import LEN, Msg, write_delimited, write_point
+from goodnotes.model import FIXTURE_DOC_ID, LEN, Msg, write_delimited, write_point
 
-DOC, PAGE, NOTES, LAYER = ("D0C00000-0000-4000-8000-000000000000",
+DOC, PAGE, NOTES, LAYER = (FIXTURE_DOC_ID,
                            "9A6E0000-0000-4000-8000-000000000000",
                            "9A6E0000-0000-4000-8000-000000000001",  # page id + 1
                            "1A7E0000-0000-4000-8000-000000000000")
