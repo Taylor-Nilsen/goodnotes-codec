@@ -202,9 +202,9 @@ last-writer-wins registers `{1 value, 2 stamp {1 counter, 2 random}}`.
 | 104 notesIndexUpdated, 105 indexStoreUpdated, 102 notesItemsUpdatedV2 | link a page's notes group (ink file) to the document |
 | 57 pageFavourited (bookmark) · 63 pageRotationDidSet (`3` quarter turns) · 64 pageLabelsDidSet · 110 pageReadDidSet | per-page attributes |
 | 65 pageOutlineDidSet | `2 outlineId, 3 deleted, 4 position, 5 title, 6 parentOutlineId, 15 outlineType, 17 doc` (schema 26) |
-| 160–165 audio notes | `160: 2 attachment, 4 durationFlicks, 5 references {1 {1 timestampFlicks, 2 pageId}…}, 6 position`; 164 `3 audioName` |
+| 160–165 audio notes | `160: 2 attachment, 4 durationFlicks, 5 references {1 map<ref id, {1 timestampFlicks, 2 pageId}>}, 6 position`; 161 `3 references` (same shape); 164 `3 audioName {1 name, 2 stamp}` (checked against real GoodNotes events) |
 | 210–216 transcriptions | `210: 3 audioId, 4 audioStart, 5 audioEnd, 6 locale, 7 text` |
-| 130–137 comments | `130: 3 position, 4 anchor {1 pageId, 2 region, 3 stickyNote {1 expanded, 2 color, 3 size, 4 rotation, 5 position, 6 showAuthor}}, 5 firstCommentId`; `133: 4 content, 6 authorId, 7 authorName`; 132 `3 isResolved` |
+| 130–137 comments | `130: 3 position, 4 anchor {1 pageId, 2 region, 3 stickyNote {1 expanded, 2 color, 3 size, 4 rotation, 5 position, 6 showAuthor}}, 5 firstCommentId`; anchor, position and content are `{1 value, 2 stamp}` registers; sticky field 2 is a string of unknown format (a color message there makes GoodNotes reject the file); `133: 4 content, 6 authorId, 7 authorName`; 132 `3 isResolved` |
 
 **Paper.** Built-in paper is a PDF attachment like any background; layer
 field 9 names it `<template id>_standard_1_<color> - <Name>` (color 1 yellow,

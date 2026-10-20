@@ -6,7 +6,7 @@ import unittest
 import zipfile
 
 from goodnotes.model import Document, FillShape, Stroke, is_constant_width, new_fill_shape, new_fountain_stroke
-from goodnotes.model import _event_kind
+from goodnotes.model import Msg, _audio_refs, _event_kind
 from goodnotes.svg import page_to_svg
 
 FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "gn-mac-mixed-pens.goodnotes")
@@ -88,6 +88,23 @@ class RealDocumentTest(unittest.TestCase):
         self.assertEqual([p.uuid for p in again.pages], [p.uuid for p in doc.pages])
         self.assertEqual(again.files["schema.pb"], b"\x08\x18")  # {1: 24}; the real export has {1: 25}
 
+
+    def test_audio_references_decode_real_event(self):
+        """An audioNoteReferencesUpdated (161) event from a real GoodNotes library
+        (reports/import-report-20261020-100658.txt): references are
+        {1 map<ref id, {1 timestampFlicks, 2 pageId}>}; this ref has no timestamp."""
+        raw = bytes.fromhex(
+            "0a2433384441454443382d363833322d344133342d414641342d3636323443333231333938378a0a83020a24"
+            "33384441454443382d363833322d344133342d414641342d363632344333323133393837122444414537353832"
+            "382d324336442d343045452d413437332d4542364444453831394544331a500a4e0a24433241464646304"
+            "52d393337312d344133342d393135382d4139353243393830334146351226122439313445433642392d4637"
+            "39342d343230412d394533452d37363931364131393339453451604728"
+            "90df9979425a2439344244343142362d384536462d343644362d424545332d41423944353830393743424262"
+            "215f396564663534323637306365323938653536663264333638313138343764623068f0ab93ed9bedb09e0e"
+            "70a4a5eec392337818")
+        body = Msg.parse(raw).sub(161)
+        page = "914EC6B9-F794-420A-9E3E-76916A1939E4"
+        self.assertEqual(_audio_refs(body.sub(3), {page: "p"}), [(0.0, "p")])
 
 if __name__ == "__main__":
     unittest.main()

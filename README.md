@@ -138,9 +138,9 @@ own page renderings were checked.
 | Images (placed, rotated, locked), PDF stickers | ✅ | ✅ | ✅ |
 | Math conversions (LaTeX + image) | ✅ | ✅ | ⚠️ imports and the record survives, but GoodNotes does not draw it |
 | Pages: add/insert/move/delete/duplicate, paper, PDF background, PDF/image import | ✅ | ✅ | ✅ |
-| Built-in Essentials paper at any size, image backgrounds | ✅ | ✅ | not yet checked |
+| Built-in Essentials paper at any size, image backgrounds | ✅ | ✅ | ✅ narrow ruled renders; other templates and backgrounds not yet checked |
 | Bookmarks, rotation, labels, outline (nested) | ✅ | ✅ | ✅ (read flag is per-user state; GoodNotes drops it on import) |
-| Audio notes, transcripts | ✅ | ✅ | ✅ audio note and name; ❌ page references (encoding under test) |
-| Comments (threads, replies, resolve) | ✅ | ✅ | ⚠️ a bare thread imports; with the sticky-note anchor or a comment it is rejected (under test) |
+| Audio notes, transcripts | ✅ | ✅ | ✅ audio note and name; page references in the format GoodNotes itself writes (re-check pending) |
+| Comments (threads, replies, resolve) | ✅ | ✅ | ✅ threads and comments import (each part checked separately; combined re-check pending); no comment color |
 | Legacy text boxes, Text Docs (Yjs), graph widgets | ✅ | round-trip | — |
 | SVG export/import, vector PDF export | ✅ | ✅ | — |

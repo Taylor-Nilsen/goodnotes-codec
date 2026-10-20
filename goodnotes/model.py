@@ -482,6 +482,16 @@ FIXTURE_DOC_ID = "D0C00000-0000-4000-8000-000000000000"
 ALLOW_TEST_FIXTURE = False
 
 
+def _audio_refs(r: Msg | None, by_id: dict) -> list:
+    """[(seconds, Page)] from references {1 map<ref id, {1 timestampFlicks, 2 pageId}>}."""
+    out = []
+    for entry in (r.subs(1) if r is not None else []):
+        v = entry.sub(2)
+        if v is not None:
+            out.append((v.int(1) / FLICKS, by_id.get(v.str(2))))
+    return out
+
+
 # --- page items ------------------------------------------------------------
 
 class Item:
@@ -2804,20 +2814,11 @@ class Document:
         for e in self.events:
             b = e.sub(160)
             if b is not None:
-                refs = []
-                r = b.sub(5)
-                for v in (r.subs(1) if r is not None else []):
-                    refs.append((v.int(1) / FLICKS, by_id.get(v.str(2))))
                 notes[b.str(1)] = {"id": b.str(1), "attachment": b.str(2), "duration": b.int(4) / FLICKS,
-                                   "pages": refs, "name": None}
+                                   "pages": _audio_refs(b.sub(5), by_id), "name": None}
             b = e.sub(161)
             if b is not None and b.str(1) in notes:
-                refs = []
-                r = b.sub(3)
-                r = r.sub(1) if r is not None and r.sub(1) is not None and not r.subs(1) else r
-                for v in (r.subs(1) if r is not None else []):
-                    refs.append((v.int(1) / FLICKS, by_id.get(v.str(2))))
-                notes[b.str(1)]["pages"] = refs
+                notes[b.str(1)]["pages"] = _audio_refs(b.sub(3), by_id)
             b = e.sub(164)
             if b is not None:
                 names[b.str(1)] = b.path(3).str(1) if b.sub(3) is not None else b.str(3)
@@ -2841,12 +2842,12 @@ class Document:
         body.set_bytes(2, aid)
         body.set_bytes(3, self.doc_id)
         body.set_int(4, int(duration * FLICKS))
-        refs = Msg()
+        refs = Msg()  # {1 map<ref id, {1 timestampFlicks, 2 pageId}>}, as in real notes
         for t in (offsets if offsets is not None else ([0.0] if page is not None else [])):
             v = Msg()
             v.set_int(1, int(t * FLICKS))
             v.set_bytes(2, page.page_id)
-            refs.add(1, LEN, v)
+            refs.add(1, LEN, Msg([[1, LEN, new_uuid().encode()], [2, LEN, v]]))
         body.set_bytes(5, refs)
         body.set_bytes(6, lww(key_between(None, None)))
         self._event(160, audio_id, body)
@@ -2854,7 +2855,7 @@ class Document:
             nb = Msg()
             nb.set_bytes(1, audio_id)
             nb.set_bytes(2, self.doc_id)
-            nb.set_bytes(3, lww(name))
+            nb.set_bytes(3, lww(name, 1))
             self._event(164, audio_id, nb)
         return audio_id
 
@@ -2908,8 +2909,7 @@ class Document:
         return list(threads.values())
 
     def add_comment(self, page: Page, position, text: str, author: str = "",
-                    author_id: str = "", thread: str | None = None,
-                    color=(1.0, 0.87, 0.3, 1.0)) -> str:
+                    author_id: str = "", thread: str | None = None) -> str:
         """Starts a comment thread pinned at `position` on `page` (or adds
         to `thread`). Returns the thread id."""
         cid = new_uuid()
@@ -2923,7 +2923,8 @@ class Document:
             anchor.set_bytes(1, page.page_id)
             sticky = Msg()
             sticky.set_int(1, 1)
-            sticky.set_bytes(2, write_color(color))
+            # ponytail: no field 2 (color): GoodNotes declares it a string of unknown format, and a
+            # color message there makes it reject the file; add it once a real comment shows the format
             sticky.set_bytes(3, write_point(256.0, 256.0))
             sticky.set_bytes(5, write_point(*position))
             sticky.set_int(6, 1)
