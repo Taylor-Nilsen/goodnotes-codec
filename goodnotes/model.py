@@ -871,8 +871,8 @@ class Line(View):
 
 class Image(View):
     """Placed image, sticker or element (1). 2 {origin, size}; 3 {center,
-    size, 3 angle in radians}; 4 attachment id; 6 kind (1 image,
-    3 element/sticker); 7 element group id."""
+    size, 3 angle in radians}; 4 attachment id; 6 format (0 PNG, 1 JPEG,
+    2 JPEG 2000, 3 PDF, 4 HEIC, 5 GIF); 7 element group id."""
 
     @property
     def attachment(self) -> str:
@@ -1228,10 +1228,22 @@ class Document:
         idx.set_bytes(2, f"notes/{nid}")
         self.files["index.notes.pb"] = self.files.get("index.notes.pb", b"") + write_delimited([idx])
         self.files[f"notes/{nid}"] = b""
+        self._notes_events(nid, did)
+
+    def _notes_events(self, nid: str, did: str, version: int = 0) -> None:
+        """Store (105), index (104) and items-updated (102) events for a
+        notes group. `version` is the random 63-bit id GoodNotes stamps on
+        105.5 / 104.12 once the group holds items. A group with items and
+        no version is foreign to GoodNotes: on import it re-keys every item
+        and points images at new attachment ids it never stores, so sync
+        drops the images."""
+        now = time.time() * 1000
         store = Msg()
         store.set_int(1, 1)
         store.set_bytes(2, did)
         store.set_bytes(4, nid)
+        if version:
+            store.set_int(5, version)
         store.set_bytes(6, "auto")
         self._event(105, nid, store)
         ni = Msg()
@@ -1239,6 +1251,8 @@ class Document:
         ni.set_bytes(2, nid)
         ni.set_double(10, now)
         ni.set_bytes(11, new_uuid())
+        if version:
+            ni.set_int(12, version)
         ni.set_bytes(13, "auto")
         ni.set_int(14, 1)
         ni.set_bytes(15, new_uuid())
@@ -1562,6 +1576,7 @@ class Document:
     def save(self, path: str) -> None:
         """Writes the file, refusing (ValueError) when `problems()` finds
         anything, and re-reads it before it replaces `path`."""
+        self._version_notes()
         bad = self.problems()
         if bad:
             raise ValueError("not saving, GoodNotes won't open this:\n  " + "\n  ".join(bad))
@@ -1575,6 +1590,18 @@ class Document:
         finally:
             if os.path.exists(tmp):
                 os.remove(tmp)
+
+    def _version_notes(self) -> None:
+        """New notes version for every page whose items changed, or that
+        holds items but was never versioned (files from older versions of
+        this library)."""
+        versioned = {e.sub(104).str(2) for e in self.events if e.has(104) and e.sub(104).has(12)}
+        for p in self.pages:
+            data = write_delimited(p.records)
+            name = f"notes/{p.uuid}"
+            if data and (data != self.files.get(name) or p.uuid not in versioned):
+                self._notes_events(p.uuid, self.doc_id or p.event.str(1), random.getrandbits(63) or 1)
+            self.files[name] = data
 
     def _write(self, path: str) -> None:
         files = dict(self.files)
@@ -1925,6 +1952,21 @@ def _stroke_style(width, color, dash=None) -> Msg:
     return s
 
 
+def image_format(data: bytes) -> int:
+    """Image payload field 6: 0 PNG, 1 JPEG, 2 JPEG 2000, 3 PDF, 4 HEIC, 5 GIF."""
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return 0
+    if data[:4] == b"%PDF":
+        return 3
+    if data[:6] in (b"GIF87a", b"GIF89a"):
+        return 5
+    if data[4:12] in (b"ftypheic", b"ftypheix", b"ftypmif1", b"ftypheif"):
+        return 4
+    if data[:12] == b"\x00\x00\x00\x0cjP  \r\n\x87\n" or data[:4] == b"\xff\x4f\xff\x51":
+        return 2
+    return 1
+
+
 def new_image(doc: Document, data: bytes, center, size, angle: float = 0.0) -> Item:
     """Registers `data` as an attachment and places it."""
     aid = doc.add_attachment(data)
@@ -1933,7 +1975,9 @@ def new_image(doc: Document, data: bytes, center, size, angle: float = 0.0) -> I
     b.set_bytes(1, iid)
     b.set_bytes(4, aid)
     b.set_bytes(5, Msg([[1, LEN, stamp()]]))
-    b.set_int(6, 1)
+    fmt = image_format(data)
+    if fmt:  # proto3: PNG (0) is left out
+        b.set_int(6, fmt)
     b.set_bytes(15, st.copy())
     b.set_int(18, SCHEMA_VERSION)
     item = Item(_meta(doc, iid, st, attachment=aid), Msg([[1, LEN, b]]))

@@ -64,3 +64,33 @@ class BuildersTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NotesVersionTest(unittest.TestCase):
+    def test_save_versions_pages_with_items(self):
+        """GoodNotes re-keys the items of an unversioned notes group on
+        import and loses the images' attachments on sync."""
+        def versions(doc, page):
+            return [e.sub(104).int(12) for e in doc.events
+                    if e.has(104) and e.sub(104).str(2) == page.uuid and e.sub(104).has(12)]
+
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "v.goodnotes")
+            doc = Document.new(pages=2)
+            img = new_image(doc, PNG, (50, 50), (20, 10))
+            self.assertFalse(img.body.has(6))  # 0 = PNG, not JPEG
+            doc.pages[0].append(img)
+            doc.save(path)
+            doc = Document(path)
+            v1 = versions(doc, doc.pages[0])
+            self.assertEqual(len(v1), 1)
+            self.assertIn(v1[0], [e.sub(105).int(5) for e in doc.events if e.has(105)])
+            self.assertEqual(versions(doc, doc.pages[1]), [])  # empty page: no version
+            n = len(doc.events)
+            doc.save(path)
+            self.assertEqual(len(Document(path).events), n)  # unchanged: no new version
+            doc.pages[0].append(new_stroke(doc, [("M", (0, 0)), ("L", (9, 9))]))
+            doc.save(path)
+            v2 = versions(Document(path), doc.pages[0])
+            self.assertEqual(len(v2), 2)
+            self.assertNotEqual(v2[0], v2[1])

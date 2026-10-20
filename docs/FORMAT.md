@@ -87,7 +87,7 @@ end arrowhead (1 open, 2 filled); `32` style.
 ### 1 — image, sticker, element
 
 `2 {origin, size}` axis-aligned bounds of the rotated image, `3 {center,
-size, 3 angle in radians}`, `4 attachment id`, `6 kind (1 image, 3 element)`,
+size, 3 angle in radians}`, `4 attachment id`, `6 format (0 PNG, 1 JPEG, 2 JPEG 2000, 3 PDF, 4 HEIC, 5 GIF)`,
 `7 group id`. Stickers and element sticky notes are vector PDF attachments.
 Cropping writes a new, cropped attachment.
 
@@ -108,6 +108,7 @@ last-writer-wins.
 | 2 | paper layer: `4 background attachment, 5 PDF page, 8 page size, 9 template name` |
 | 54 | page: `2 page id, 3 {1 layer id}, 4 {1 order key}` |
 | 104 / 102 / 10 | page ink file created / linked / page inserted |
+| 105.5 / 104.12 | notes version: a random 63-bit id GoodNotes writes (105 then 104, then 102) once a page's notes hold items. **Required**: on import GoodNotes re-keys every item of an unversioned group (old id in meta 6, old attachment in meta 7, a 106 event listing the old ids) and the re-keyed images' attachments are never stored, so sync drops them |
 | 6 | attachment added: `5 byte size, 6 document id` — **required**, or GoodNotes ignores the attachment |
 | 57 | bookmark `3 {1 1}` · 63 rotation `3 {1 quarter turns}` · 65 outline entry `4 order key, 5 title` |
 | 160, 161, 210, 213 | audio recordings and per-word transcript timings |
