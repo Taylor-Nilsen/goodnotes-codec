@@ -1,6 +1,8 @@
 GoodNotes import report — 2026-10-20 09:43 UTC
 Branch feat/full-format @ a7b8148, python3 -m unittest: 30 OK.
-Kit: python3 -m goodnotes testkit <tmp>; GoodNotes for Mac (Catalyst), running throughout (pid 4839).
+Kit: python3 -m goodnotes testkit <tmp>; the 16 files imported are in
+reports/import-20261020-094338/kit/, screenshots of 04/12 in .../screenshots/.
+ GoodNotes for Mac (Catalyst), running throughout (pid 4839).
 
 Method
 - open -g -a Goodnotes <file> with the library's "Test" folder open. GoodNotes shows an
