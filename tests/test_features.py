@@ -145,6 +145,14 @@ class NewDocumentTest(unittest.TestCase):
             t = e.sub(2)
             if t is not None and t.str(4):
                 self.assertIn(t.str(4), seen)
+        # as GoodNotes writes them (ground truth, reports/import-20261020-115453): favourite's stamp
+        # carries counter 1; a recording's attachment event has an empty pageRange
+        doc.favourite = True
+        fav = [e.sub(34) for e in doc.events if e.has(34)][-1]
+        self.assertEqual((fav.path(2).int(1), fav.path(2, 2).int(1)), (1, 1))
+        doc.add_audio_note(b"RIFF....WAVE", 1.0)
+        att = next(e.sub(6) for e in doc.events if e.has(6) and e.sub(6).str(1) == doc.audio_notes[-1]["attachment"])
+        self.assertEqual(att.bytes(12), b"")
 
     def test_page_operations(self):
         doc = Document.new("Pages", pages=1)

@@ -28,7 +28,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from . import schema as S
-from .model import (DW_SCHEMA, PENCIL_SCHEMA, PSTROKE, VW_SCHEMA, Box, Document, FillShape, Image, Item,
+from .model import (arc_through, DW_SCHEMA, PENCIL_SCHEMA, PSTROKE, VW_SCHEMA, Box, Document, FillShape, Image, Item,
                     LegacyText, Line, Math, Msg, Page, RichText, Sticky, Stroke, TextDoc, f32, is_constant_width,
                     new_box, new_brush_stroke, new_fountain_stroke, new_image, new_line,
                     new_pencil_stroke, new_stroke, read_color, read_point, rich_text, TextRun,
@@ -384,10 +384,9 @@ def _line_svg(ln: Line, marker_id: str) -> str:
                  f"M {_fmt(*start)} H {knee[0]:.2f} V {end[1]:.2f} H {end[0]:.2f}")
         else:
             d = f"M {_fmt(*start)} H {end[0]:.2f} V {end[1]:.2f}"
-    elif ln.mid is not None:
-        mid = ln.mid
-        ctrl = (2 * mid[0] - (start[0] + end[0]) / 2, 2 * mid[1] - (start[1] + end[1]) / 2)
-        d = f"M {_fmt(*start)} Q {_fmt(*ctrl)} {_fmt(*end)}"
+    elif ln.mid is not None and arc_through(start, ln.mid, end):
+        r, sweep = arc_through(start, ln.mid, end)[2:]  # GoodNotes: circular arc through the mid point
+        d = f"M {_fmt(*start)} A {r:.2f} {r:.2f} 0 {int(abs(sweep) > math.pi)} {int(sweep > 0)} {_fmt(*end)}"
     else:
         d = f"M {_fmt(*start)} L {_fmt(*end)}"
     marker = ""
@@ -497,7 +496,7 @@ def page_to_svg(doc: Document, page: Page, background: bool = True) -> str:
     defs = ('<defs><marker id="arrow1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" '
             'orient="auto-start-reverse" markerUnits="strokeWidth"><path d="M 0 0 L 10 5 L 0 10" fill="none" '
             'stroke="context-stroke" stroke-width="1.5"/></marker>'
-            '<marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" '
+            '<marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" '
             'orient="auto-start-reverse" markerUnits="strokeWidth"><path d="M 0 0 L 10 5 L 0 10 Z" '
             'fill="context-stroke"/></marker></defs>')
     rot = doc.rotation(page) if page.page_id else 0

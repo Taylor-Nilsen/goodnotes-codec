@@ -499,6 +499,21 @@ def _comment_text(body: Msg) -> str:
     return raw.decode("utf-8", "replace")
 
 
+def arc_through(start, mid, end):
+    """(cx, cy, r, a0, sweep) of the circular arc from `start` through `mid`
+    to `end`, the way GoodNotes draws a curved line (full test, 06); angles
+    in radians on a y-down page, sweep > 0 clockwise. None when collinear."""
+    (ax, ay), (bx, by), (cx, cy) = start, mid, end
+    d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
+    if abs(d) < 1e-9:
+        return None
+    ux = ((ax * ax + ay * ay) * (by - cy) + (bx * bx + by * by) * (cy - ay) + (cx * cx + cy * cy) * (ay - by)) / d
+    uy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx) + (cx * cx + cy * cy) * (bx - ax)) / d
+    a0, a1, a2 = (math.atan2(p[1] - uy, p[0] - ux) for p in (start, mid, end))
+    d1, d2 = (a1 - a0) % math.tau, (a2 - a0) % math.tau
+    return ux, uy, math.hypot(ax - ux, ay - uy), a0, d2 if d1 < d2 else d2 - math.tau
+
+
 def _pivot_origin(center, size, radians: float) -> tuple[float, float]:
     """Stored origin that puts a w x h box turned `radians` about its origin
     (as GoodNotes draws it) with its center at `center`."""
@@ -2517,12 +2532,14 @@ class Document:
     def favourite(self, on: bool) -> None:
         body = Msg()
         body.set_bytes(1, self.doc_id)
-        body.set_bytes(2, lww(bool(on)))
+        body.set_bytes(2, lww(bool(on), 1))  # stamp counter 1, as GoodNotes writes it
         self._event(34, self.doc_id, body)
 
-    def add_attachment(self, data: bytes, attachment_id: str | None = None) -> str:
+    def add_attachment(self, data: bytes, attachment_id: str | None = None, page_range: bool = True) -> str:
         """Stores raw bytes and registers them the three ways GoodNotes
-        requires (zip entry, index.attachments.pb, attachmentCreated event)."""
+        requires (zip entry, index.attachments.pb, attachmentCreated event).
+        page_range=False leaves the event's pageRange empty, as GoodNotes
+        does for a recording."""
         aid = attachment_id or new_uuid()
         self.files[f"attachments/{aid}"] = data
         idx = Msg()
@@ -2537,8 +2554,11 @@ class Document:
         body.set_bytes(6, self.doc_id or new_uuid())
         body.set_double(10, now)
         body.set_bytes(11, new_uuid())
-        pages = len(pdf_pages(data)) if data[:4] == b"%PDF" else 1
-        body.set_bytes(12, Msg([[1, VARINT, 1], [2, VARINT, pages]]))  # pageRange {firstPage, numberOfPages}
+        if page_range:
+            pages = len(pdf_pages(data)) if data[:4] == b"%PDF" else 1
+            body.set_bytes(12, Msg([[1, VARINT, 1], [2, VARINT, pages]]))  # pageRange {firstPage, numberOfPages}
+        else:
+            body.set_bytes(12, b"")
         body.set_int(14, self.device)
         body.set_int(15, int(now))
         body.set_int(16, S.SCHEMA_VERSION)
@@ -2882,8 +2902,9 @@ class Document:
                        name: str | None = None, offsets: list[float] | None = None) -> str:
         """Attaches a recording (m4a/mp3/wav bytes) to the document. `page`
         and `offsets` (seconds into the recording) link it to the page the
-        way GoodNotes does for ink written while recording."""
-        aid = self.add_attachment(data)
+        way GoodNotes does for ink written while recording. GoodNotes records
+        MP4/AAC (.m4a) and plays that; it doesn't play a WAV (import round 9)."""
+        aid = self.add_attachment(data, page_range=False)
         audio_id = new_uuid()
         body = Msg()
         body.set_bytes(1, audio_id)

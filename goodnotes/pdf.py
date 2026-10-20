@@ -31,7 +31,7 @@ import sys
 import zlib
 from dataclasses import dataclass
 
-from .model import (DW_SCHEMA, PENCIL_SCHEMA, PT_PER_UNIT, VW_SCHEMA, Box, Document, FillShape,
+from .model import (arc_through, DW_SCHEMA, PENCIL_SCHEMA, PT_PER_UNIT, VW_SCHEMA, Box, Document, FillShape,
                     Image, Item, LegacyText, Line, Page, RichText, Sticky, Stroke, TextDoc, TextRun,
                     f32, image_size, is_constant_width, read_point)
 
@@ -711,13 +711,13 @@ def _draw_sticky(cv: _Canvas, s: Sticky) -> None:
 
 def _arrowhead(cv: _Canvas, tip, direction, style: int, width: float, color) -> None:
     """Open chevron (1) or filled triangle (2) pointing along `direction`
-    at `tip`, sized like the SVG markers (5x / 4x the line width)."""
+    at `tip`, sized like the SVG markers (5x / 6x the line width)."""
     dx, dy = direction
     n = math.hypot(dx, dy)
     if not n or style not in (1, 2):
         return
     ux, uy = dx / n, dy / n
-    size = width * (5 if style == 1 else 4)
+    size = width * (5 if style == 1 else 6)  # filled head measured at ~6x the line width in GoodNotes (full test, 06)
     tx, ty = tip[0] + ux * size * 0.1, tip[1] + uy * size * 0.1
     bx, by = tx - ux * size, ty - uy * size
     a, b = (bx - uy * size / 2, by + ux * size / 2), (bx + uy * size / 2, by - ux * size / 2)
@@ -748,12 +748,12 @@ def _draw_line(cv: _Canvas, ln: Line) -> None:
             uniq = [start, end]
         d_start = (uniq[0][0] - uniq[1][0], uniq[0][1] - uniq[1][1])
         d_end = (uniq[-1][0] - uniq[-2][0], uniq[-1][1] - uniq[-2][1])
-    elif ln.mid is not None:
-        mid = ln.mid
-        ctrl = (2 * mid[0] - (start[0] + end[0]) / 2, 2 * mid[1] - (start[1] + end[1]) / 2)
-        segs = [("M", start), _quad_to_cubic(start, ctrl, end)]
-        d_start = (start[0] - ctrl[0], start[1] - ctrl[1])
-        d_end = (end[0] - ctrl[0], end[1] - ctrl[1])
+    elif ln.mid is not None and arc_through(start, ln.mid, end):
+        cx, cy, r, a0, sweep = arc_through(start, ln.mid, end)  # GoodNotes: circular arc through the mid point
+        segs = [("M", start)] + _arc_segs(cx, cy, r, r, a0, sweep)
+        sgn, a2 = (1 if sweep > 0 else -1), a0 + sweep
+        d_start = (sgn * math.sin(a0), -sgn * math.cos(a0))   # pointing back out of the start
+        d_end = (-sgn * math.sin(a2), sgn * math.cos(a2))     # direction of travel at the end
     else:
         segs = [("M", start), ("L", end)]
         d_start = (start[0] - end[0], start[1] - end[1])

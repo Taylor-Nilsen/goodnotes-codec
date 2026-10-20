@@ -190,6 +190,11 @@ def make_testkit(directory, only=None) -> list[str]:
         d.add_audio_note(_tone_wav(2.0), 2.0, name="Test recording")
     kits["10d_audio_note_name_no_refs"] = audio_name
 
+    m4a = _tone_m4a(2.0)
+    if m4a:  # macOS only (afconvert): the format GoodNotes records and plays
+        kits["10e_audio_m4a"] = lambda d: d.add_audio_note(m4a, 2.0, page=d.pages[0], name="m4a tone",
+                                                            offsets=[0.0, 1.0])
+
     def wrap_variants(d):
         """Both sizings wrap when the measured size is stored, as the library always does.
         (Without it GoodNotes doesn't size the box and shows a clipped sliver: full test, 11.)"""
@@ -290,6 +295,20 @@ def make_testkit(directory, only=None) -> list[str]:
         doc.save(str(path))
         paths.append(str(path))
     return paths
+
+
+def _tone_m4a(seconds: float) -> bytes | None:
+    """The tone as MP4/AAC via macOS' afconvert; None where that isn't available."""
+    import shutil
+    import subprocess
+    import tempfile
+    if not shutil.which("afconvert"):
+        return None
+    with tempfile.TemporaryDirectory() as t:
+        wav, m4a = Path(t) / "t.wav", Path(t) / "t.m4a"
+        wav.write_bytes(_tone_wav(seconds))
+        subprocess.run(["afconvert", "-f", "m4af", "-d", "aac", str(wav), str(m4a)], check=True, capture_output=True)
+        return m4a.read_bytes()
 
 
 def _tone_wav(seconds: float, rate: int = 44100, hz: float = 440.0) -> bytes:
