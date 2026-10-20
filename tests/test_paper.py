@@ -7,7 +7,7 @@ import zlib
 
 from goodnotes import paper
 from goodnotes.model import Document
-from tests import synthetic
+from tests import fake_document
 
 
 def png(w, h, rgba):
@@ -26,7 +26,7 @@ def mediabox(pdf):
 class PaperTest(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
-        self.path = synthetic.make(os.path.join(self.dir.name, "s.goodnotes"))
+        self.path = fake_document.make(os.path.join(self.dir.name, "s.goodnotes"))
 
     def tearDown(self):
         self.dir.cleanup()

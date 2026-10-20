@@ -4,7 +4,7 @@ import unittest
 
 from goodnotes.model import Document
 from goodnotes.svg import page_to_svg, parse_path, svg_to_items
-from tests import synthetic
+from tests import fake_document
 
 
 class SvgTest(unittest.TestCase):
@@ -25,7 +25,7 @@ class SvgTest(unittest.TestCase):
             src = os.path.join(d, "in.svg")
             with open(src, "w") as f:
                 f.write(svg)
-            doc = Document(synthetic.make(os.path.join(d, "s.goodnotes")))
+            doc = Document(fake_document.make(os.path.join(d, "s.goodnotes")))
             for it in svg_to_items(doc, src):
                 doc.pages[0].append(it)
             self.assertEqual([i.kind for i in doc.pages[0].items], ["stroke", "box", "box", "box"])

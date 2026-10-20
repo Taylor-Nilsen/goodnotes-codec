@@ -6,7 +6,7 @@ import unittest
 from goodnotes.model import (ARROW_FILLED, DASHED, Document, new_box, new_image, new_line,
                              new_pencil_stroke, new_shape_stroke, new_sticky, new_stroke,
                              page_link, rich_text)
-from tests import synthetic
+from tests import fake_document
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\0" * 32
 
@@ -14,7 +14,7 @@ PNG = b"\x89PNG\r\n\x1a\n" + b"\0" * 32
 class BuildersTest(unittest.TestCase):
     def test_every_builder_round_trips(self):
         with tempfile.TemporaryDirectory() as d:
-            doc = Document(synthetic.make(os.path.join(d, "s.goodnotes")))
+            doc = Document(fake_document.make(os.path.join(d, "s.goodnotes")))
             pg = doc.pages[0]
             items = [
                 new_stroke(doc, [("M", (1, 2)), ("Q", (3, 4), (5, 6)), ("L", (7, 8))], (1, 0, 0, 1), 2.0),
@@ -55,7 +55,7 @@ class BuildersTest(unittest.TestCase):
 
     def test_move_keeps_geometry(self):
         with tempfile.TemporaryDirectory() as d:
-            doc = Document(synthetic.make(os.path.join(d, "s.goodnotes")))
+            doc = Document(fake_document.make(os.path.join(d, "s.goodnotes")))
             pg = doc.pages[0]
             pg.append(new_box(doc, (10, 20), (30, 40)))
             pg.move(pg.items[0], 5, -5)

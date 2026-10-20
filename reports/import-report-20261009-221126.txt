@@ -1,0 +1,425 @@
+GoodNotes import test report
+date: 2026-10-09 22:09:36 UTC
+macOS: 26.6.2  python: 3.14  branch: feat/full-format
+goodnotes version: 7.0.60
+
+=== 05_text_boxes_rich_text: ok
+2026-10-09 15:09:36.165 A  Goodnotes[6176:148b15] (SyncedDefaults) kvs/cloud-sync
+2026-10-09 15:09:36.167 A  Goodnotes[6176:148a96] (SyncedDefaults) kvs/synchronize
+2026-10-09 15:09:36.167 A  Goodnotes[6176:148a96] (SyncedDefaults) kvs/get-change-token
+2026-10-09 15:09:36.168 Df Goodnotes[6176:148f17] [com.apple.xpc:connection] [0x73ca826c0] invalidated after the last release of the connection object
+2026-10-09 15:09:36.169 A  Goodnotes[6176:148a96] (SyncedDefaults) kvs/save-change-token
+2026-10-09 15:09:36.192 Df Goodnotes[6176:35a04] [com.apple.UIKit:UIFocus] Failed to update focus with context <UIFocusUpdateContext: 0x7052a54a0; previouslyFocusedItem: (nil); nextFocusedItem: (nil); focusHeading: None>. No additional info available.
+2026-10-09 15:09:36.192 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] Reloading input views for key-window scene responder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x732188700; frame = (0 0; 1330 998); > force:N
+2026-10-09 15:09:36.192 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] _inputViewsForResponder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x732188700; frame = (0 0; 1330 998); >, automaticKeyboard: 1, force: 0
+2026-10-09 15:09:36.197 Df Goodnotes[6176:35a04] [com.apple.launchservices:default] LaunchServices: _LSOpenExtractBackgroundLaunchReasonFromAppleEvent() => false - <private>, err=Error Domain=NSOSStatusErrorDomain Code=-1701 UserInfo={_LSLine=1374, _LSFunction=<private>, _LSFile=<private>, _LSErrorMessage=<private>}
+2026-10-09 15:09:36.198 Df Goodnotes[6176:148f15] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:09:36.207 Df Goodnotes[6176:148f15] [com.apple.xpc:connection] [0x73c9e4640] invalidated after the last release of the connection object
+2026-10-09 15:09:36.207 Df Goodnotes[6176:148f15] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 5B24F826-D065-4F23-8C48-A2478AB48890 at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:09:36.214 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73a9148c0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:09:36.214 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73e8ee6c0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:09:36.219 Df Goodnotes[6176:148f15] [com.apple.xpc:connection] [0x73add5540] invalidated after the last release of the connection object
+2026-10-09 15:09:36.219 Df Goodnotes[6176:148f15] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 195ADEBF-5D00-4D83-BCA6-4D1340C9066F at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:09:36.222 Df Goodnotes[6176:148f18] [com.apple.xpc:connection] [0x73ce170c0] invalidated after the last release of the connection object
+2026-10-09 15:09:36.222 Df Goodnotes[6176:148a97] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:09:36.223 Df Goodnotes[6176:148f17] [com.apple.xpc:connection] [0x73ce170c0] invalidated after the last release of the connection object
+2026-10-09 15:09:36.231 Df Goodnotes[6176:148a97] [com.apple.xpc:connection] [0x73add6580] invalidated after the last release of the connection object
+2026-10-09 15:09:36.231 Df Goodnotes[6176:148a97] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 0AEB142A-8E04-4BB7-A4AD-53C678BB0B1A at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:09:36.239 Df Goodnotes[6176:148a97] [com.apple.xpc:connection] [0x73ce16bc0] invalidated after the last release of the connection object
+2026-10-09 15:09:36.239 Df Goodnotes[6176:148a97] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: E9386B69-2805-4F7F-9D71-B766838DD4D7 at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:09:36.677 Df Goodnotes[6176:148a96] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x705de70c0> for task identifier: 8340
+2026-10-09 15:09:36.679 Df Goodnotes[6176:148f48] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704f8ddb0> for task identifier: 8341
+2026-10-09 15:09:36.681 Df Goodnotes[6176:148a96] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x7048b5860> for task identifier: 8342
+2026-10-09 15:09:36.682 Df Goodnotes[6176:148a97] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x7048b5860> for task identifier: 8343
+2026-10-09 15:09:37.308 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:09:37.308 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:09:37.415 Df Goodnotes[6176:148f19] [com.apple.xpc:connection] [0x7049a3a80] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:09:37.415 Df Goodnotes[6176:148f67] [com.apple.xpc:connection] [0x73a558000] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:09:37.416 Df Goodnotes[6176:148f19] [com.apple.xpc:connection] [0x73c9afac0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:09:37.416 Df Goodnotes[6176:148f19] [com.apple.xpc:connection] [0x7049a1980] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:09:37.482 Df Goodnotes[6176:148f49] [com.apple.xpc:connection] [0x73ad30000] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:09:37.482 Df Goodnotes[6176:148f49] [com.apple.xpc:connection] [0x7049a2d00] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:09:37.552 Df Goodnotes[6176:148f5c] [com.apple.xpc:connection] [0x73c9a4280] invalidated after the last release of the connection object
+2026-10-09 15:09:37.583 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73ca81540] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:09:37.583 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73e43b340] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:09:37.809 Df Goodnotes[6176:148f5d] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x705de4780> for task identifier: 8345
+2026-10-09 15:09:39.163 Df Goodnotes[6176:35a04] [com.apple.UIKit:_UIVisualStyleRegistry] Note: no default visual style class registered as fallback for stylable class UIActivityIndicatorView
+
+=== 08a_pages_pdf_import: ok
+2026-10-09 15:09:52.165 A  Goodnotes[6176:148f68] (SyncedDefaults) kvs/cloud-sync
+2026-10-09 15:09:52.166 A  Goodnotes[6176:148f68] (SyncedDefaults) kvs/synchronize
+2026-10-09 15:09:52.166 A  Goodnotes[6176:148f68] (SyncedDefaults) kvs/get-change-token
+2026-10-09 15:09:52.168 A  Goodnotes[6176:148f68] (SyncedDefaults) kvs/save-change-token
+2026-10-09 15:09:52.171 Df Goodnotes[6176:148f15] [com.apple.xpc:connection] [0x73bdc3340] invalidated after the last release of the connection object
+2026-10-09 15:09:52.187 Df Goodnotes[6176:35a04] [com.apple.UIKit:UIFocus] Failed to update focus with context <UIFocusUpdateContext: 0x704d5f2a0; previouslyFocusedItem: (nil); nextFocusedItem: (nil); focusHeading: None>. No additional info available.
+2026-10-09 15:09:52.187 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] Reloading input views for key-window scene responder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x733e07800; frame = (0 0; 1330 998); > force:N
+2026-10-09 15:09:52.187 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] _inputViewsForResponder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x733e07800; frame = (0 0; 1330 998); >, automaticKeyboard: 1, force: 0
+2026-10-09 15:09:52.210 Df Goodnotes[6176:35a04] [com.apple.launchservices:default] LaunchServices: _LSOpenExtractBackgroundLaunchReasonFromAppleEvent() => false - <private>, err=Error Domain=NSOSStatusErrorDomain Code=-1701 UserInfo={_LSLine=1374, _LSFunction=<private>, _LSFile=<private>, _LSErrorMessage=<private>}
+2026-10-09 15:09:52.211 Df Goodnotes[6176:148f65] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:09:52.219 Df Goodnotes[6176:148f65] [com.apple.xpc:connection] [0x73e441f40] invalidated after the last release of the connection object
+2026-10-09 15:09:52.219 Df Goodnotes[6176:148f65] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: F08CB117-34BF-492A-A2FE-B739F9D2B99B at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:09:52.220 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73dea61c0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:09:52.220 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73dea5180] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:09:52.230 Df Goodnotes[6176:148f65] [com.apple.xpc:connection] [0x73dea5180] invalidated after the last release of the connection object
+2026-10-09 15:09:52.230 Df Goodnotes[6176:148f65] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: EEAD540A-AB9B-4054-ACAD-A211DCE04051 at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:09:52.231 Df Goodnotes[6176:148a97] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:09:52.232 Df Goodnotes[6176:148f65] [com.apple.xpc:connection] [0x73dea61c0] invalidated after the last release of the connection object
+2026-10-09 15:09:52.238 Df Goodnotes[6176:148a97] [com.apple.xpc:connection] [0x73e441f40] invalidated after the last release of the connection object
+2026-10-09 15:09:52.238 Df Goodnotes[6176:148a97] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: F5C7AA87-09EB-4FB0-B5F8-03F32462C5FA at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:09:52.245 Df Goodnotes[6176:148a97] [com.apple.xpc:connection] [0x73dea5180] invalidated after the last release of the connection object
+2026-10-09 15:09:52.245 Df Goodnotes[6176:148a97] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 0B077D73-83C1-4B96-8314-69AC3651307A at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:09:52.247 Df Goodnotes[6176:148a97] [com.apple.xpc:connection] [0x73dfd9b80] invalidated after the last release of the connection object
+2026-10-09 15:09:52.691 Df Goodnotes[6176:148a97] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704f8e530> for task identifier: 8362
+2026-10-09 15:09:52.692 Df Goodnotes[6176:148f65] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704f8e530> for task identifier: 8363
+2026-10-09 15:09:52.693 Df Goodnotes[6176:148f15] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704f8e530> for task identifier: 8364
+2026-10-09 15:09:52.694 Df Goodnotes[6176:148f15] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704f8e530> for task identifier: 8365
+2026-10-09 15:09:53.317 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:09:53.317 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:09:53.317 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:09:53.317 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:09:53.570 Df Goodnotes[6176:148a97] [com.apple.xpc:connection] [0x73f9343c0] invalidated after the last release of the connection object
+2026-10-09 15:09:53.620 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73e428780] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:09:53.620 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73bdc1cc0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:09:53.758 Df Goodnotes[6176:149145] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x7048b5770> for task identifier: 8366
+2026-10-09 15:09:55.063 Df Goodnotes[6176:35a04] [com.apple.UIKit:_UIVisualStyleRegistry] Note: no default visual style class registered as fallback for stylable class UIActivityIndicatorView
+2026-10-09 15:09:55.063 Df Goodnotes[6176:35a04] [com.apple.UIKit:_UIVisualStyleRegistry] Note: no default visual style class registered as fallback for stylable class UIActivityIndicatorView
+2026-10-09 15:09:55.151 Df Goodnotes[6176:35a04] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x705de72f0> for task identifier: 8367
+2026-10-09 15:09:55.426 Df Goodnotes[6176:14913e] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:09:55.426 Df Goodnotes[6176:148f58] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+
+=== 08b_bookmark_rotation_favourite: ok
+2026-10-09 15:10:06.515 A  Goodnotes[6176:149141] (SyncedDefaults) kvs/cloud-sync
+2026-10-09 15:10:06.516 A  Goodnotes[6176:149141] (SyncedDefaults) kvs/synchronize
+2026-10-09 15:10:06.516 A  Goodnotes[6176:149141] (SyncedDefaults) kvs/get-change-token
+2026-10-09 15:10:06.517 A  Goodnotes[6176:149141] (SyncedDefaults) kvs/save-change-token
+2026-10-09 15:10:06.520 Df Goodnotes[6176:149186] [com.apple.xpc:connection] [0x73fb4ee40] invalidated after the last release of the connection object
+2026-10-09 15:10:06.539 Df Goodnotes[6176:35a04] [com.apple.UIKit:UIFocus] Failed to update focus with context <UIFocusUpdateContext: 0x705041a40; previouslyFocusedItem: (nil); nextFocusedItem: (nil); focusHeading: None>. No additional info available.
+2026-10-09 15:10:06.539 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] Reloading input views for key-window scene responder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x732188e00; frame = (0 0; 1330 998); > force:N
+2026-10-09 15:10:06.539 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] _inputViewsForResponder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x732188e00; frame = (0 0; 1330 998); >, automaticKeyboard: 1, force: 0
+2026-10-09 15:10:06.542 Df Goodnotes[6176:35a04] [com.apple.launchservices:default] LaunchServices: _LSOpenExtractBackgroundLaunchReasonFromAppleEvent() => false - <private>, err=Error Domain=NSOSStatusErrorDomain Code=-1701 UserInfo={_LSLine=1374, _LSFunction=<private>, _LSFile=<private>, _LSErrorMessage=<private>}
+2026-10-09 15:10:06.542 Df Goodnotes[6176:149149] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:10:06.550 Df Goodnotes[6176:149149] [com.apple.xpc:connection] [0x73f93f480] invalidated after the last release of the connection object
+2026-10-09 15:10:06.550 Df Goodnotes[6176:149149] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: C998DF30-CE91-42B9-98FD-0E4FFF1F6138 at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:10:06.561 Df Goodnotes[6176:149149] [com.apple.xpc:connection] [0x73f935cc0] invalidated after the last release of the connection object
+2026-10-09 15:10:06.561 Df Goodnotes[6176:149149] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 1BD6C20F-FD41-458F-A442-99653331520B at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:10:06.564 Df Goodnotes[6176:149149] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:10:06.564 Df Goodnotes[6176:148f73] [com.apple.xpc:connection] [0x73f935cc0] invalidated after the last release of the connection object
+2026-10-09 15:10:06.565 Df Goodnotes[6176:149186] [com.apple.xpc:connection] [0x73facbc00] invalidated after the last release of the connection object
+2026-10-09 15:10:06.571 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73f935180] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:06.571 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73a902940] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:06.573 Df Goodnotes[6176:149149] [com.apple.xpc:connection] [0x73fb38000] invalidated after the last release of the connection object
+2026-10-09 15:10:06.573 Df Goodnotes[6176:149149] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: BE138459-5F22-4E33-9616-0B8EEA8D20EB at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:10:06.582 Df Goodnotes[6176:149149] [com.apple.xpc:connection] [0x73fb3a580] invalidated after the last release of the connection object
+2026-10-09 15:10:06.582 Df Goodnotes[6176:149149] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: DCDC4438-CBF6-4F15-8911-09BFD3E79EB3 at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:10:07.063 Df Goodnotes[6176:148f68] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x705de6f30> for task identifier: 8380
+2026-10-09 15:10:07.064 Df Goodnotes[6176:149187] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704865d10> for task identifier: 8381
+2026-10-09 15:10:07.065 Df Goodnotes[6176:148f68] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704865d10> for task identifier: 8382
+2026-10-09 15:10:07.066 Df Goodnotes[6176:149187] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704865d10> for task identifier: 8383
+2026-10-09 15:10:07.675 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:07.675 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:07.675 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:07.675 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:07.675 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:07.675 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:07.922 Df Goodnotes[6176:149145] [com.apple.xpc:connection] [0x73de2d680] invalidated after the last release of the connection object
+2026-10-09 15:10:07.974 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73f937c00] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:07.974 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73fb4c140] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:08.129 Df Goodnotes[6176:148f18] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704f69e00> for task identifier: 8384
+2026-10-09 15:10:08.613 Df Goodnotes[6176:35a04] [com.apple.UIKit:_UIVisualStyleRegistry] Note: no default visual style class registered as fallback for stylable class UIActivityIndicatorView
+2026-10-09 15:10:08.613 Df Goodnotes[6176:35a04] [com.apple.UIKit:_UIVisualStyleRegistry] Note: no default visual style class registered as fallback for stylable class UIActivityIndicatorView
+2026-10-09 15:10:08.914 Df Goodnotes[6176:14913f] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+
+=== 08c_labels_read: blank
+2026-10-09 15:10:16.317 A  Goodnotes[6176:148f18] (SyncedDefaults) kvs/cloud-sync
+2026-10-09 15:10:16.319 A  Goodnotes[6176:148f18] (SyncedDefaults) kvs/synchronize
+2026-10-09 15:10:16.319 A  Goodnotes[6176:148f18] (SyncedDefaults) kvs/get-change-token
+2026-10-09 15:10:16.320 A  Goodnotes[6176:148f18] (SyncedDefaults) kvs/save-change-token
+2026-10-09 15:10:16.320 Df Goodnotes[6176:149188] [com.apple.xpc:connection] [0x73fbec8c0] invalidated after the last release of the connection object
+2026-10-09 15:10:16.345 Df Goodnotes[6176:35a04] [com.apple.UIKit:UIFocus] Failed to update focus with context <UIFocusUpdateContext: 0x704bc6440; previouslyFocusedItem: (nil); nextFocusedItem: (nil); focusHeading: None>. No additional info available.
+2026-10-09 15:10:16.345 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] Reloading input views for key-window scene responder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x738675c00; frame = (0 0; 1330 998); > force:N
+2026-10-09 15:10:16.346 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] _inputViewsForResponder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x738675c00; frame = (0 0; 1330 998); >, automaticKeyboard: 1, force: 0
+2026-10-09 15:10:16.362 Df Goodnotes[6176:35a04] [com.apple.launchservices:default] LaunchServices: _LSOpenExtractBackgroundLaunchReasonFromAppleEvent() => false - <private>, err=Error Domain=NSOSStatusErrorDomain Code=-1701 UserInfo={_LSLine=1374, _LSFunction=<private>, _LSFile=<private>, _LSErrorMessage=<private>}
+2026-10-09 15:10:16.364 Df Goodnotes[6176:148f18] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:10:16.370 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73f937c00] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:16.370 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73f935b80] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:16.372 Df Goodnotes[6176:148f18] [com.apple.xpc:connection] [0x73fc30f00] invalidated after the last release of the connection object
+2026-10-09 15:10:16.372 Df Goodnotes[6176:148f18] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 690E6D22-0035-41BF-ACCB-029992BB90A4 at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:10:16.384 Df Goodnotes[6176:148f18] [com.apple.xpc:connection] [0x73ad4de00] invalidated after the last release of the connection object
+2026-10-09 15:10:16.384 Df Goodnotes[6176:148f18] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 5CDCFDE2-C4A5-4795-BAEA-00E8449EBB94 at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:10:16.386 Df Goodnotes[6176:148f73] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:10:16.387 Df Goodnotes[6176:149188] [com.apple.xpc:connection] [0x73f935b80] invalidated after the last release of the connection object
+2026-10-09 15:10:16.392 Df Goodnotes[6176:148f73] [com.apple.xpc:connection] [0x73f936300] invalidated after the last release of the connection object
+2026-10-09 15:10:16.392 Df Goodnotes[6176:148f73] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: DF9303B7-357D-4E4D-B506-103451E1ADCB at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:10:16.400 Df Goodnotes[6176:148f73] [com.apple.xpc:connection] [0x73f935b80] invalidated after the last release of the connection object
+2026-10-09 15:10:16.400 Df Goodnotes[6176:148f73] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 1BD6AD92-21CA-4BF2-8709-1968E034D0D0 at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:10:16.401 Df Goodnotes[6176:148f73] [com.apple.xpc:connection] [0x73f937c00] invalidated after the last release of the connection object
+2026-10-09 15:10:16.496 Df Goodnotes[6176:148f73] [com.apple.xpc:connection] [0x73fbecb40] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:16.496 Df Goodnotes[6176:148f73] [com.apple.xpc:connection] [0x70499a580] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:16.504 Df Goodnotes[6176:149188] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x705de4140> for task identifier: 8386
+2026-10-09 15:10:16.849 Df Goodnotes[6176:148f59] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x705de47d0> for task identifier: 8401
+2026-10-09 15:10:16.851 Df Goodnotes[6176:148f73] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x705f4f2f0> for task identifier: 8402
+2026-10-09 15:10:16.852 Df Goodnotes[6176:1492d6] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x705f4f2f0> for task identifier: 8403
+2026-10-09 15:10:16.853 Df Goodnotes[6176:148f59] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x705f4f2f0> for task identifier: 8404
+2026-10-09 15:10:17.483 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:17.483 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:17.483 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:17.483 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:17.483 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:17.483 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:17.731 Df Goodnotes[6176:148f73] [com.apple.xpc:connection] [0x73fde0dc0] invalidated after the last release of the connection object
+2026-10-09 15:10:17.803 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73fbec8c0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:17.803 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73fbecc80] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:17.934 Df Goodnotes[6176:149385] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704867390> for task identifier: 8405
+
+=== 08d_outline: blank
+2026-10-09 15:10:29.334 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:29.334 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:29.334 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:29.334 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:29.334 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:29.334 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:29.842 A  Goodnotes[6176:149386] (SyncedDefaults) kvs/cloud-sync
+2026-10-09 15:10:29.844 A  Goodnotes[6176:149386] (SyncedDefaults) kvs/synchronize
+2026-10-09 15:10:29.844 A  Goodnotes[6176:149386] (SyncedDefaults) kvs/get-change-token
+2026-10-09 15:10:29.846 A  Goodnotes[6176:149386] (SyncedDefaults) kvs/save-change-token
+2026-10-09 15:10:29.847 Df Goodnotes[6176:149186] [com.apple.xpc:connection] [0x73fca3c00] invalidated after the last release of the connection object
+2026-10-09 15:10:29.867 Df Goodnotes[6176:35a04] [com.apple.UIKit:UIFocus] Failed to update focus with context <UIFocusUpdateContext: 0x704baca00; previouslyFocusedItem: (nil); nextFocusedItem: (nil); focusHeading: None>. No additional info available.
+2026-10-09 15:10:29.867 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] Reloading input views for key-window scene responder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x73218aa00; frame = (0 0; 1330 998); > force:N
+2026-10-09 15:10:29.867 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] _inputViewsForResponder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x73218aa00; frame = (0 0; 1330 998); >, automaticKeyboard: 1, force: 0
+2026-10-09 15:10:29.869 Df Goodnotes[6176:35a04] [com.apple.launchservices:default] LaunchServices: _LSOpenExtractBackgroundLaunchReasonFromAppleEvent() => false - <private>, err=Error Domain=NSOSStatusErrorDomain Code=-1701 UserInfo={_LSLine=1374, _LSFunction=<private>, _LSFile=<private>, _LSErrorMessage=<private>}
+2026-10-09 15:10:29.869 Df Goodnotes[6176:149186] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:10:29.878 Df Goodnotes[6176:149186] [com.apple.xpc:connection] [0x73c3ae440] invalidated after the last release of the connection object
+2026-10-09 15:10:29.878 Df Goodnotes[6176:149186] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: A4AFFC4A-315F-4B2B-ACE4-4EC97B72A37E at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:10:29.888 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73fbe1180] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:29.888 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73fbe1cc0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:29.888 Df Goodnotes[6176:149186] [com.apple.xpc:connection] [0x73e42bd40] invalidated after the last release of the connection object
+2026-10-09 15:10:29.888 Df Goodnotes[6176:149186] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: C04F8B1A-57FF-4153-90ED-C77A98AE16D5 at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:10:29.890 Df Goodnotes[6176:149188] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:10:29.891 Df Goodnotes[6176:149386] [com.apple.xpc:connection] [0x73e425b80] invalidated after the last release of the connection object
+2026-10-09 15:10:29.891 Df Goodnotes[6176:149387] [com.apple.xpc:connection] [0x73e425b80] invalidated after the last release of the connection object
+2026-10-09 15:10:29.897 Df Goodnotes[6176:149188] [com.apple.xpc:connection] [0x73fbe1cc0] invalidated after the last release of the connection object
+2026-10-09 15:10:29.897 Df Goodnotes[6176:149188] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: FA2FCA48-AE77-47AC-B1FB-8BEF7DE438B8 at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:10:29.907 Df Goodnotes[6176:149188] [com.apple.xpc:connection] [0x73fbe0f00] invalidated after the last release of the connection object
+2026-10-09 15:10:29.907 Df Goodnotes[6176:149188] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 74662C0B-CDA7-4A0A-B80D-0983393B2F19 at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:10:30.360 Df Goodnotes[6176:148f73] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x70525dbd0> for task identifier: 8419
+2026-10-09 15:10:30.361 Df Goodnotes[6176:149188] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x70525dbd0> for task identifier: 8420
+2026-10-09 15:10:30.362 Df Goodnotes[6176:148f73] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x70525dbd0> for task identifier: 8421
+2026-10-09 15:10:30.362 Df Goodnotes[6176:149188] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x70525dbd0> for task identifier: 8422
+2026-10-09 15:10:30.992 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:30.992 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:30.992 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:30.992 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:30.992 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:30.992 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:31.239 Df Goodnotes[6176:149186] [com.apple.xpc:connection] [0x73ddc6bc0] invalidated after the last release of the connection object
+
+=== 08e_comment: fail
+2026-10-09 15:10:40.032 A  Goodnotes[6176:149188] (SyncedDefaults) kvs/cloud-sync
+2026-10-09 15:10:40.034 A  Goodnotes[6176:1492d6] (SyncedDefaults) kvs/synchronize
+2026-10-09 15:10:40.034 A  Goodnotes[6176:1492d6] (SyncedDefaults) kvs/get-change-token
+2026-10-09 15:10:40.035 A  Goodnotes[6176:1492d6] (SyncedDefaults) kvs/save-change-token
+2026-10-09 15:10:40.035 Df Goodnotes[6176:149385] [com.apple.xpc:connection] [0x73ca5b980] invalidated after the last release of the connection object
+2026-10-09 15:10:40.061 Df Goodnotes[6176:35a04] [com.apple.UIKit:UIFocus] Failed to update focus with context <UIFocusUpdateContext: 0x705339360; previouslyFocusedItem: (nil); nextFocusedItem: (nil); focusHeading: None>. No additional info available.
+2026-10-09 15:10:40.061 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] Reloading input views for key-window scene responder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x733e04700; frame = (0 0; 1330 998); > force:N
+2026-10-09 15:10:40.061 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] _inputViewsForResponder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x733e04700; frame = (0 0; 1330 998); >, automaticKeyboard: 1, force: 0
+2026-10-09 15:10:40.079 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73de2d680] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:40.079 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73fde17c0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:40.082 Df Goodnotes[6176:1492d6] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x705de5040> for task identifier: 8437
+2026-10-09 15:10:40.083 Df Goodnotes[6176:35a04] [com.apple.launchservices:default] LaunchServices: _LSOpenExtractBackgroundLaunchReasonFromAppleEvent() => false - <private>, err=Error Domain=NSOSStatusErrorDomain Code=-1701 UserInfo={_LSLine=1374, _LSFunction=<private>, _LSFile=<private>, _LSErrorMessage=<private>}
+2026-10-09 15:10:40.084 Df Goodnotes[6176:1492d6] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:10:40.091 Df Goodnotes[6176:1492d6] [com.apple.xpc:connection] [0x73e219540] invalidated after the last release of the connection object
+2026-10-09 15:10:40.091 Df Goodnotes[6176:1492d6] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 7A1077F4-94F0-4405-82EC-AF412B0D66B3 at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:10:40.101 Df Goodnotes[6176:1492d6] [com.apple.xpc:connection] [0x73f934640] invalidated after the last release of the connection object
+2026-10-09 15:10:40.101 Df Goodnotes[6176:1492d6] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: DCC7483B-B3AA-4AD5-9168-7459C6FC7953 at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:10:40.101 Df Goodnotes[6176:14947b] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:10:40.107 Df Goodnotes[6176:14947b] [com.apple.xpc:connection] [0x73f934640] invalidated after the last release of the connection object
+2026-10-09 15:10:40.107 Df Goodnotes[6176:14947b] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: CA218772-C45E-4BFE-B76A-34A803F06C68 at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:10:40.114 Df Goodnotes[6176:14947b] [com.apple.xpc:connection] [0x73f937480] invalidated after the last release of the connection object
+2026-10-09 15:10:40.115 Df Goodnotes[6176:14947b] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 7A84F2B9-7BD1-4BBC-B67C-D1C3F479CC9C at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:10:40.116 Df Goodnotes[6176:14947b] [com.apple.xpc:connection] [0x73e219540] invalidated after the last release of the connection object
+2026-10-09 15:10:40.117 Df Goodnotes[6176:149386] [com.apple.xpc:connection] [0x73e219540] invalidated after the last release of the connection object
+2026-10-09 15:10:40.117 Df Goodnotes[6176:1492d6] [com.apple.xpc:connection] [0x73f934640] invalidated after the last release of the connection object
+2026-10-09 15:10:40.118 Df Goodnotes[6176:14947b] [com.apple.xpc:connection] [0x73f936bc0] invalidated after the last release of the connection object
+2026-10-09 15:10:40.543 Df Goodnotes[6176:1492d6] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704f6ada0> for task identifier: 8438
+2026-10-09 15:10:40.544 Df Goodnotes[6176:1492d6] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704f6ada0> for task identifier: 8439
+2026-10-09 15:10:40.545 Df Goodnotes[6176:149386] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704f6ada0> for task identifier: 8440
+2026-10-09 15:10:40.546 Df Goodnotes[6176:1492d6] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704f6ada0> for task identifier: 8441
+2026-10-09 15:10:41.183 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:41.183 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:41.183 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:41.183 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:41.183 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:41.183 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:41.428 Df Goodnotes[6176:148f73] [com.apple.xpc:connection] [0x73fc19a40] invalidated after the last release of the connection object
+2026-10-09 15:10:41.483 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73ca59f40] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:41.483 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73fab7c00] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:41.615 Df Goodnotes[6176:149386] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x705de5040> for task identifier: 8443
+
+=== 10a_audio_note_with_page_refs: fail
+2026-10-09 15:10:47.643 Df Goodnotes[6176:149186] [com.apple.xpc:connection] [0x73cdd0dc0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:47.643 Df Goodnotes[6176:149186] [com.apple.xpc:connection] [0x705fb8180] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:47.708 Df Goodnotes[6176:149186] [com.apple.xpc:connection] [0x705fb9800] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:47.708 Df Goodnotes[6176:148f73] [com.apple.xpc:connection] [0x73ca84140] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:47.989 A  Goodnotes[6176:149186] (SyncedDefaults) kvs/cloud-sync
+2026-10-09 15:10:47.990 A  Goodnotes[6176:149386] (SyncedDefaults) kvs/synchronize
+2026-10-09 15:10:47.990 A  Goodnotes[6176:149386] (SyncedDefaults) kvs/get-change-token
+2026-10-09 15:10:47.992 A  Goodnotes[6176:149386] (SyncedDefaults) kvs/save-change-token
+2026-10-09 15:10:47.994 Df Goodnotes[6176:1494bb] [com.apple.xpc:connection] [0x73cdd0dc0] invalidated after the last release of the connection object
+2026-10-09 15:10:48.021 Df Goodnotes[6176:35a04] [com.apple.UIKit:UIFocus] Failed to update focus with context <UIFocusUpdateContext: 0x705aae620; previouslyFocusedItem: (nil); nextFocusedItem: (nil); focusHeading: None>. No additional info available.
+2026-10-09 15:10:48.021 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] Reloading input views for key-window scene responder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x733e04700; frame = (0 0; 1330 998); > force:N
+2026-10-09 15:10:48.021 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] _inputViewsForResponder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x733e04700; frame = (0 0; 1330 998); >, automaticKeyboard: 1, force: 0
+2026-10-09 15:10:48.023 Df Goodnotes[6176:35a04] [com.apple.launchservices:default] LaunchServices: _LSOpenExtractBackgroundLaunchReasonFromAppleEvent() => false - <private>, err=Error Domain=NSOSStatusErrorDomain Code=-1701 UserInfo={_LSLine=1374, _LSFunction=<private>, _LSFile=<private>, _LSErrorMessage=<private>}
+2026-10-09 15:10:48.023 Df Goodnotes[6176:1494bb] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:10:48.032 Df Goodnotes[6176:1494bb] [com.apple.xpc:connection] [0x73c3aea80] invalidated after the last release of the connection object
+2026-10-09 15:10:48.032 Df Goodnotes[6176:1494bb] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: EE55071F-EB4E-472C-832F-75B64923F8F4 at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:10:48.040 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73bc15e00] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:48.040 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73fab5040] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:48.043 Df Goodnotes[6176:1494bb] [com.apple.xpc:connection] [0x73de99900] invalidated after the last release of the connection object
+2026-10-09 15:10:48.043 Df Goodnotes[6176:1494bb] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: EA27BC57-B972-4004-B52A-EEB19C22A940 at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:10:48.045 Df Goodnotes[6176:149187] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:10:48.045 Df Goodnotes[6176:14947b] [com.apple.xpc:connection] [0x73a903200] invalidated after the last release of the connection object
+2026-10-09 15:10:48.046 Df Goodnotes[6176:1494bc] [com.apple.xpc:connection] [0x73fb4df40] invalidated after the last release of the connection object
+2026-10-09 15:10:48.053 Df Goodnotes[6176:149187] [com.apple.xpc:connection] [0x73cdd2800] invalidated after the last release of the connection object
+2026-10-09 15:10:48.053 Df Goodnotes[6176:149187] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: B5B8E3DE-7988-475B-8C4C-6D2FA0C54CBC at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:10:48.061 Df Goodnotes[6176:149187] [com.apple.xpc:connection] [0x73cdd1180] invalidated after the last release of the connection object
+2026-10-09 15:10:48.061 Df Goodnotes[6176:149187] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 74D28548-A13A-45A4-B567-6B026AC6A19A at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:10:48.323 Df Goodnotes[6176:149186] [com.apple.xpc:connection] [0x73fbe1900] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:48.323 Df Goodnotes[6176:149186] [com.apple.xpc:connection] [0x705fba880] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:49.150 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:49.150 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:49.150 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:49.150 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:49.150 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:49.150 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:49.397 Df Goodnotes[6176:149555] [com.apple.xpc:connection] [0x73f936940] invalidated after the last release of the connection object
+2026-10-09 15:10:49.450 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73cdd0dc0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:49.450 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73cdd3980] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:49.790 Df Goodnotes[6176:148f73] [com.apple.xpc:connection] [0x73cdd2800] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:49.790 Df Goodnotes[6176:148f73] [com.apple.xpc:connection] [0x705fbba80] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+
+=== 10b_audio_note_plain: blank
+2026-10-09 15:10:54.055 Df Goodnotes[6176:1494bb] [com.apple.xpc:connection] [0x73fc81540] invalidated after the last release of the connection object
+2026-10-09 15:10:54.083 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73f936940] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:54.083 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73f936300] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:54.368 Df Goodnotes[6176:149556] [com.apple.xpc:connection] [0x73e15e440] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:54.368 Df Goodnotes[6176:149556] [com.apple.xpc:connection] [0x7067f0f00] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:54.377 Df Goodnotes[6176:149554] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x705de4fa0> for task identifier: 8457
+2026-10-09 15:10:54.779 Df Goodnotes[6176:14947b] [com.apple.xpc:connection] [0x73fdfdcc0] invalidated after the last release of the connection object
+2026-10-09 15:10:54.783 Df Goodnotes[6176:35a04] [com.apple.launchservices:default] LaunchServices: _LSOpenExtractBackgroundLaunchReasonFromAppleEvent() => false - <private>, err=Error Domain=NSOSStatusErrorDomain Code=-1701 UserInfo={_LSLine=1374, _LSFunction=<private>, _LSFile=<private>, _LSErrorMessage=<private>}
+2026-10-09 15:10:54.783 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:54.783 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:54.783 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:54.783 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:54.783 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:54.783 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:10:54.794 Df Goodnotes[6176:1495f6] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:10:54.801 Df Goodnotes[6176:1495f6] [com.apple.xpc:connection] [0x73e15ee40] invalidated after the last release of the connection object
+2026-10-09 15:10:54.801 Df Goodnotes[6176:1495f6] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: A67AE879-C486-4C82-A8F1-2A5A6FD64BF5 at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:10:54.812 Df Goodnotes[6176:1495f6] [com.apple.xpc:connection] [0x73fc83340] invalidated after the last release of the connection object
+2026-10-09 15:10:54.812 Df Goodnotes[6176:1495f6] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 7730836B-07BD-45DE-9400-807C56DE2758 at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:10:54.814 Df Goodnotes[6176:14947b] [com.apple.xpc:connection] [0x73cdd3840] invalidated after the last release of the connection object
+2026-10-09 15:10:54.817 Df Goodnotes[6176:1495f6] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x70409ccd0> for task identifier: 8473
+2026-10-09 15:10:54.817 Df Goodnotes[6176:1495f6] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x70409c410> for task identifier: 8474
+2026-10-09 15:10:54.817 Df Goodnotes[6176:1495f6] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704f6a850> for task identifier: 8475
+2026-10-09 15:10:54.817 Df Goodnotes[6176:1495f6] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704f6b700> for task identifier: 8476
+2026-10-09 15:10:54.818 Df Goodnotes[6176:1495f5] [com.apple.xpc:connection] [0x73facb840] invalidated after the last release of the connection object
+2026-10-09 15:10:54.818 Df Goodnotes[6176:35a04] [com.apple.BaseBoard:BSAction] Reply (error: response-not-possible) <UIDestroySceneAction: 0x02dc00fe>
+2026-10-09 15:10:54.818 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73fc81540] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:54.818 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73fc81680] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:54.820 Df Goodnotes[6176:14947b] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:10:54.823 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73f937c00] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:10:54.825 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyWindow] Scene will invalidate: _UIPopoverScene: 0x7059a2f80; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:FUScene%7Ccom.goodnotesapp.x(6176)%7CUINSSceneHostingViewController-073E26C5-6A61-4CCF-936E-7E0B44AF284D
+2026-10-09 15:10:54.827 Df Goodnotes[6176:14947b] [com.apple.xpc:connection] [0x73f0d4500] invalidated after the last release of the connection object
+2026-10-09 15:10:54.827 Df Goodnotes[6176:14947b] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 0DE5F3D6-18E1-4A99-8173-A0F380614B46 at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:10:54.835 Df Goodnotes[6176:14947b] [com.apple.xpc:connection] [0x73f0d6f80] invalidated after the last release of the connection object
+2026-10-09 15:10:54.835 Df Goodnotes[6176:14947b] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 5BBBF4FE-DA93-41A8-9C08-A4DE470DF5A0 at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:10:55.311 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] Reloading input views for key-window scene responder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x733e04700; frame = (0 0; 1330 998); > force:N
+2026-10-09 15:10:55.311 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] _inputViewsForResponder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x733e04700; frame = (0 0; 1330 998); >, automaticKeyboard: 1, force: 0
+2026-10-09 15:10:55.328 Df Goodnotes[6176:35a04] [com.apple.UIKit:UIFocus] Failed to update focus with context <UIFocusUpdateContext: 0x705aaf3e0; previouslyFocusedItem: (nil); nextFocusedItem: (nil); focusHeading: None>. No additional info available.
+2026-10-09 15:10:55.329 Df Goodnotes[6176:149556] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x70409c3c0> for task identifier: 8478
+2026-10-09 15:10:55.933 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+
+=== 11_text_wrap_variants: ok
+2026-10-09 15:11:03.843 A  Goodnotes[6176:149558] (SyncedDefaults) kvs/cloud-sync
+2026-10-09 15:11:03.844 A  Goodnotes[6176:149558] (SyncedDefaults) kvs/synchronize
+2026-10-09 15:11:03.844 A  Goodnotes[6176:149558] (SyncedDefaults) kvs/get-change-token
+2026-10-09 15:11:03.846 A  Goodnotes[6176:149558] (SyncedDefaults) kvs/save-change-token
+2026-10-09 15:11:03.846 Df Goodnotes[6176:149556] [com.apple.xpc:connection] [0x73e219f40] invalidated after the last release of the connection object
+2026-10-09 15:11:03.865 Df Goodnotes[6176:35a04] [com.apple.UIKit:UIFocus] Failed to update focus with context <UIFocusUpdateContext: 0x706203480; previouslyFocusedItem: (nil); nextFocusedItem: (nil); focusHeading: None>. No additional info available.
+2026-10-09 15:11:03.865 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] Reloading input views for key-window scene responder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x738674000; frame = (0 0; 1330 998); > force:N
+2026-10-09 15:11:03.865 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] _inputViewsForResponder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x738674000; frame = (0 0; 1330 998); >, automaticKeyboard: 1, force: 0
+2026-10-09 15:11:03.883 Df Goodnotes[6176:35a04] [com.apple.launchservices:default] LaunchServices: _LSOpenExtractBackgroundLaunchReasonFromAppleEvent() => false - <private>, err=Error Domain=NSOSStatusErrorDomain Code=-1701 UserInfo={_LSLine=1374, _LSFunction=<private>, _LSFile=<private>, _LSErrorMessage=<private>}
+2026-10-09 15:11:03.884 Df Goodnotes[6176:149558] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:11:03.894 Df Goodnotes[6176:149558] [com.apple.xpc:connection] [0x73de98640] invalidated after the last release of the connection object
+2026-10-09 15:11:03.894 Df Goodnotes[6176:149558] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 9E7CF285-6ABE-4237-888B-487190A00178 at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:11:03.895 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73dfe3d40] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:11:03.895 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73dfe21c0] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:11:03.904 Df Goodnotes[6176:149558] [com.apple.xpc:connection] [0x73e15c500] invalidated after the last release of the connection object
+2026-10-09 15:11:03.904 Df Goodnotes[6176:149558] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: C3630742-D607-4A62-BCC7-9ABD4A13C45A at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:11:03.905 Df Goodnotes[6176:1495f6] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:11:03.906 Df Goodnotes[6176:148f73] [com.apple.xpc:connection] [0x73e15ed00] invalidated after the last release of the connection object
+2026-10-09 15:11:03.913 Df Goodnotes[6176:1495f6] [com.apple.xpc:connection] [0x73e15ed00] invalidated after the last release of the connection object
+2026-10-09 15:11:03.913 Df Goodnotes[6176:1495f6] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 2C8E09D7-D211-4DB8-93E3-ADC3670CC3AB at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:11:03.921 Df Goodnotes[6176:1495f6] [com.apple.xpc:connection] [0x73e15e1c0] invalidated after the last release of the connection object
+2026-10-09 15:11:03.921 Df Goodnotes[6176:1495f6] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 2AF4FA50-0C9B-4495-9C65-6D6EB66E4586 at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:11:03.923 Df Goodnotes[6176:1495f6] [com.apple.xpc:connection] [0x73e15c640] invalidated after the last release of the connection object
+2026-10-09 15:11:04.359 Df Goodnotes[6176:149556] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x70409d360> for task identifier: 8502
+2026-10-09 15:11:04.360 Df Goodnotes[6176:149558] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x70409d360> for task identifier: 8503
+2026-10-09 15:11:04.361 Df Goodnotes[6176:149556] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x70409d360> for task identifier: 8504
+2026-10-09 15:11:04.361 Df Goodnotes[6176:1495f6] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x70409d360> for task identifier: 8505
+2026-10-09 15:11:05.000 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:11:05.000 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:11:05.000 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:11:05.000 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:11:05.000 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:11:05.000 E  Goodnotes[6176:13f93b] [com.apple.coreanimation:API] [CAMetalLayer nextDrawable] returning nil because allocation failed.
+2026-10-09 15:11:05.249 Df Goodnotes[6176:149553] [com.apple.xpc:connection] [0x73fde3200] invalidated after the last release of the connection object
+2026-10-09 15:11:05.308 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73de9a440] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:11:05.308 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73e21ad00] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:11:05.439 Df Goodnotes[6176:149556] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x704fab930> for task identifier: 8506
+2026-10-09 15:11:08.005 Df Goodnotes[6176:35a04] [com.apple.UIKit:_UIVisualStyleRegistry] Note: no default visual style class registered as fallback for stylable class UIActivityIndicatorView
+2026-10-09 15:11:08.005 Df Goodnotes[6176:35a04] [com.apple.UIKit:_UIVisualStyleRegistry] Note: no default visual style class registered as fallback for stylable class UIActivityIndicatorView
+2026-10-09 15:11:08.275 Df Goodnotes[6176:1495f6] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+
+=== 12_pencil_variants: ok
+2026-10-09 15:11:13.113 Df Goodnotes[6176:14971a] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x705de5270> for task identifier: 8521
+2026-10-09 15:11:13.443 Df Goodnotes[6176:14971b] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.443 Df Goodnotes[6176:149425] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.446 Df Goodnotes[6176:149558] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.447 Df Goodnotes[6176:1494bb] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.448 Df Goodnotes[6176:149558] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.449 Df Goodnotes[6176:149387] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.450 Df Goodnotes[6176:149558] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.450 Df Goodnotes[6176:149647] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.451 Df Goodnotes[6176:1494bb] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.451 Df Goodnotes[6176:149647] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.451 Df Goodnotes[6176:14971b] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.452 Df Goodnotes[6176:149647] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.453 Df Goodnotes[6176:14947b] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.453 Df Goodnotes[6176:149718] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.454 Df Goodnotes[6176:14947b] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.454 Df Goodnotes[6176:149425] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.455 Df Goodnotes[6176:149718] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.455 Df Goodnotes[6176:14947b] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.456 Df Goodnotes[6176:149647] [com.apple.libsqlite3:logging] automatic index on list_outline_items(id)
+2026-10-09 15:11:13.808 A  Goodnotes[6176:149425] (SyncedDefaults) kvs/cloud-sync
+2026-10-09 15:11:13.810 A  Goodnotes[6176:148f73] (SyncedDefaults) kvs/synchronize
+2026-10-09 15:11:13.810 A  Goodnotes[6176:148f73] (SyncedDefaults) kvs/get-change-token
+2026-10-09 15:11:13.812 A  Goodnotes[6176:148f73] (SyncedDefaults) kvs/save-change-token
+2026-10-09 15:11:13.812 Df Goodnotes[6176:149425] [com.apple.xpc:connection] [0x73e441180] invalidated after the last release of the connection object
+2026-10-09 15:11:13.833 Df Goodnotes[6176:35a04] [com.apple.UIKit:UIFocus] Failed to update focus with context <UIFocusUpdateContext: 0x706202b20; previouslyFocusedItem: (nil); nextFocusedItem: (nil); focusHeading: None>. No additional info available.
+2026-10-09 15:11:13.834 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] Reloading input views for key-window scene responder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x738674e00; frame = (0 0; 1330 998); > force:N
+2026-10-09 15:11:13.834 Df Goodnotes[6176:35a04] [com.apple.UIKit:KeyboardSceneDelegate] _inputViewsForResponder: <_TtGC6GN6App10PagingViewV16CommonPagingView15DefaultPageItem_: 0x738674e00; frame = (0 0; 1330 998); >, automaticKeyboard: 1, force: 0
+2026-10-09 15:11:13.836 Df Goodnotes[6176:35a04] [com.apple.launchservices:default] LaunchServices: _LSOpenExtractBackgroundLaunchReasonFromAppleEvent() => false - <private>, err=Error Domain=NSOSStatusErrorDomain Code=-1701 UserInfo={_LSLine=1374, _LSFunction=<private>, _LSFile=<private>, _LSErrorMessage=<private>}
+2026-10-09 15:11:13.836 Df Goodnotes[6176:149558] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:11:13.845 Df Goodnotes[6176:149558] [com.apple.xpc:connection] [0x73fc312c0] invalidated after the last release of the connection object
+2026-10-09 15:11:13.845 Df Goodnotes[6176:149558] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: C158AE8A-23E4-45F7-99ED-59F2AD0CB2A6 at index: 0 list: com.apple.LSSharedFileList.ApplicationRecentDocuments
+2026-10-09 15:11:13.856 Df Goodnotes[6176:149558] [com.apple.xpc:connection] [0x73e442f80] invalidated after the last release of the connection object
+2026-10-09 15:11:13.856 Df Goodnotes[6176:149558] [com.apple.sharedfilelist:XPC] -[SFLGenericList _insertItem:atIndex:error:] item: 38372274-BB7C-496D-B31C-7A4357AC5781 at index: 0 list: com.apple.LSSharedFileList.RecentDocuments
+2026-10-09 15:11:13.861 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73e1e3840] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:11:13.861 Df Goodnotes[6176:35a04] [com.apple.xpc:connection] [0x73e1e2440] invalidated because the current process cancelled the connection by calling xpc_connection_cancel()
+2026-10-09 15:11:13.861 Df Goodnotes[6176:1494bb] [com.apple.sharedfilelist:XPC] -[SFLGenericList _setPropertyValuesForKeysWithDictionary:error:] properties: {
+2026-10-09 15:11:13.861 Df Goodnotes[6176:149558] [com.apple.xpc:connection] [0x73e441f40] invalidated after the last release of the connection object
+2026-10-09 15:11:13.862 Df Goodnotes[6176:148f73] [com.apple.xpc:connection] [0x73e441f40] invalidated after the last release of the connection object
+2026-10-09 15:11:13.868 Df Goodnotes[6176:1494bb] [com.apple.xpc:connection] [0x73fc81680] invalidated after the last release of the connection object
+

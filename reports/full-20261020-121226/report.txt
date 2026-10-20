@@ -1,0 +1,99 @@
+GoodNotes final full regression — PR 11 — 2026-10-20 12:12 UTC
+Branch feat/full-format @ cbf1bf3. python3 -m unittest: 43 tests OK (the request expected 44; 43 is
+what this commit has).
+Kit: python3 -m goodnotes testkit <tmp> -> 24 files (incl. 10e_audio_m4a). Imported via background
+accessibility into "Test" in two 12-file import sheets, plus the CLI files. Page screenshots taken in
+the background (File > Open, Go > Jump to page…, screencapture -l). View > Zoom Out can't go below
+fit-width, so the bottom of tall pages is out of frame. Pointer and save-panel work was done in one
+full-screen batch while you were idle (HIDIdleTime 210 s, 12:25-12:30 UTC), then the screen was
+handed back. All 29 notebooks (24 kit + 3 CLI + 1 diagnostic + cli_from_pdf) are in GoodNotes trash
+(projection: 0 test notebooks live). No GoodNotes crash reports; GoodNotes pid unchanged throughout.
+
+Summary
+  check                                          result  evidence / note
+  A import: all 24 kit files                     pass    "Bulk imported" for every file, no "Error importing"
+  A 01 blank narrow-ruled + marker               pass    01_p1
+  A 02 wave/highlighter/solid line/rect/ellipse  pass    02_p1 (line solid, as expected on Mac)
+  A 03 fountain/brush/tape                       pass    03_p1
+  A 04 pencil grain                              pass    04_p1 (faint)
+  A 05 rich text                                 pass    05_p1: Heading bold at body size, bold/italic/underline/
+                                                         strike/link, no highlight, 2 indented bullets,
+                                                         centered, right, fixed box 28pt
+  A 05b alignment                                pass    05b_p1 (justified renders left-aligned, as expected)
+  A 06 shapes/lines/sticky                       pass    06_p1: pink box turned in place with no shadow; the arc
+                                                         has an open start arrow and a filled end arrow; dashed
+                                                         elbow; "Taylor" bottom-left
+  A 06 locked grey box                           pass    06_locked_box_drag (lock icon on, drag doesn't move it)
+  A 07 images/sticker                            pass    07_p1 (math not drawn: known)
+  A 08a 4 pages                                  pass    08a_p1..p4 (black wave, blue wave, empty, dotted 600x800)
+  A 08b bookmark + rotation                      pass    08b_p2 (rotated); projection pages.favourited=1 on p2
+  A 08b notebook favourite                       FAIL    library star empty; documents.favourited=0 (see details)
+  A 08c label "todo"                             pass    projection lww_labels = {1:"todo"}
+  A 08d outline                                  pass    08d_outline_sidebar, 08d_p2_via_section
+  A 08e comment                                  pass    marker ~(199,195); panel "a comment" by Taylor
+  A 08f resolved/open                            pass    one marker ~(500,595); panel "open thread" only;
+                                                         projection: resolved thread is_resolved=1 + "a reply"
+  A 09 erase/delete/group/dup                    pass    09_p1; 09_tap_red_selection (red+green only)
+  A 10a WAV: name + refs                         pass    projection: "Test recording", 2 s, refs 0 s and 1 s -> p1
+  A 10a WAV playback                             note    playhead stays at 00:00 after 3 s (WAV doesn't play)
+  A 10e AAC: name + refs                         pass    projection: "m4a tone", 2 s, refs 0 s and 1 s -> p1
+  A 10e AAC playback                             pass    playhead halfway at 1 s, finished by 3 s (10e_audio_playing)
+  A 10b unnamed / 10d named                      pass    10b no name, refs {}; 10d "Test recording", refs {}
+  A 11 two wrapping boxes                        FAIL    page renders completely empty (not even the marker)
+  A 12 pencil variants                           pass    12_p1 (four waves)
+  A 13a 15 template pages                        pass    13a_p01..p15 as labelled
+  A 13b sizes                                    pass    13b_p1 A4 landscape, p2 Letter, p3 900x1200
+  A 14 backgrounds                               pass    14_p1 blue, p2 PDF page 2 + red line, p3 dotted on black
+  A 13a/14 Goodnotes export                      pass    went straight to the save panel, no "Early template
+                                                         reference" warning
+  B new --paper dotted --color yellow --pages 3  pass    B_cli_new_p1 (yellow, dotted, 3 pages)
+  B from-pdf of GoodNotes' 13a PDF               pass    15 pages; B_cli_from_pdf_p01 / p12 (dotted on black)
+  B import-svg onto cli_new                      pass    B_cli_svg_p1 (red circle, blue line, "svg text")
+  C 02                                           pass    our PDF/SVG draw the line dashed (Mac-only gap; ignored)
+  C 03                                           note    GoodNotes draws a soft darker edge on the tape; ours flat
+  C 05                                           FAIL    "Heading" larger than body in our PDF and SVG; GN: bold,
+                                                         body size
+  C 06                                           FAIL    our SVG is missing the curved arrow (exporter error);
+                                                         our PDF matches GN
+  C 09                                           pass    identical
+
+Failure details
+08b favourite: the kit writes 34 documentFavourited exactly as GoodNotes does: {1 doc, 2 {1:1,
+    2 {1:1, 2:stamp}}}. GoodNotes still imports the notebook unfavourited. Diagnostic: I re-imported
+    GoodNotes' own favourited export (zz_ground_truth.goodnotes from reports/import-20261020-115453,
+    which carries a 34). It also came in unfavourited: documents.favourited=0, and its 18 events
+    became 9 ("Bulk imported 9 events"; the audio note survived, the favourite didn't). So GoodNotes'
+    import drops favourites; no file can set one. Recommend documenting this as an import limitation
+    rather than a kit bug.
+11 text wrap: the page shows nothing. Edit > Select All is disabled (no items on the page), and the
+    triangle marker is missing too. It stays empty after reopening, after closing all tabs, and in a
+    visible full-screen window. Every other notebook rendered. Our export-pdf of the same kit file
+    has both paragraphs. The kit file matches the one from 0260ea1, whose import rendered in the last
+    round (same records and the same zip layout; only ids and hashes differ). Notes:
+    GoodNotes' log has no error for it, and the library thumbnail is blank too. It needs a re-import
+    to tell whether this is a one-off GoodNotes failure or something in the file.
+C 05 heading size: GoodNotes renders "Heading" bold at body size (16/24 pt box default). Our PDF
+    draws it about 1.5x larger and not bold. Our SVG draws it larger and bold. Both should match
+    GoodNotes. Also: GoodNotes underlines the link with a dotted underline; ours has none. In the
+    pdftoppm render our PDF's bold/italic look regular (font substitution; seen in earlier rounds).
+C 06 SVG curved arrow: export-svg puts <!-- line 96A232E1…: too many values to unpack (expected 2,
+    got 3) --> where the arc should be. goodnotes/svg.py:388 does
+    `r, sweep = arc_through(start, ln.mid, end)[2:]`, but arc_through now returns three values after
+    index 2. The PDF exporter draws the arc correctly. Shadow on the pink box appears only in our SVG
+    (Mac-only gap; ignored).
+
+Notes
+- 10a (WAV) still doesn't play on Mac; 10e (AAC/M4A) does. Use AAC for audio notes.
+- The jump-to-page dialog needs a fresh app_screenshot before each use in the background (indices go
+  stale), which is how an earlier batch mixed up two shots; those were redone.
+- At the start, closing a kit tab dropped me into your "HW 2" tab, and one click selected the Shapes
+  tool there. No content changed; I re-selected Lasso, which had been active.
+
+Files
+  <file>_p<N>.png                 GoodNotes page screenshots (screencapture -l)
+  06_locked_box_drag, 08d_outline_sidebar, 08d_p2_via_section, 08e_comments_panel,
+  08f_open_thread_panel, 09_tap_red_selection, 10a_audio_after_3s, 10e_audio_playing
+  gn_exports/                     GoodNotes PDF of 02 03 05 06 09 13a; Goodnotes format of 13a, 14
+  B_cli/                          cli_new, cli_svg, cli_from_pdf .goodnotes + test.svg; B_*.png
+  C/<n>_ours.pdf/.svg             python3 -m goodnotes export-pdf / export-svg <kit file>
+  C/<n>_side_by_side_gn_pdf_svg   GoodNotes PDF | our PDF | our SVG

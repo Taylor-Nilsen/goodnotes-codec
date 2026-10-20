@@ -1,0 +1,45 @@
+GoodNotes import report — round 6 — 2026-10-20 10:33 UTC
+Branch feat/full-format @ 45650f7, python3 -m unittest: 41 OK.
+Kit: testkit --only 08e,08s,08t,08u,08v,08w,08x,08y,08z. Imports via background accessibility into
+"Test"; comments panels and re-exports done in one full-screen batch after HIDIdleTime >= 120 s
+(10:43-10:44 UTC), then screen handed back. Imported notebooks moved to GoodNotes trash (deleted=1).
+No crash reports. Marker position read off the window captures (page 834 x 1079 pt).
+
+Summary
+  file                              result    app log error                     marker      panel text
+  08e_comment                       REJECTED  invalidUTF8 (BinaryDecodingError 2)  -           -
+  08s_comment_rich_bare             IMPORTED  -                                 (200,200)   "a comment" (one blank line above)
+  08t_comment_text_wrapper          IMPORTED  -                                 (200,200)   "a comment"
+  08u_comment_text_raw              IMPORTED  -                                 (200,200)   none (Taylor only)
+  08v_comment_text_container        REJECTED  invalidUTF8 (BinaryDecodingError 2)  -           -
+  08w_comment_sticky_text_full      REJECTED  invalidUTF8 (BinaryDecodingError 2)  -           -
+  08x_comment_rich_unwrapped        IMPORTED  -                                 (200,200)   "a comment"
+  08y_comment_text_raw_unwrapped    REJECTED  malformedProtobuf (BinaryDecodingError 3) -       -
+  08z_comment_container_unwrapped   IMPORTED  -                                 (200,200)   none (Taylor only)
+
+Evidence
+- Rejected: "[E] Error importing GN5 Document: <reason>" + "[Import][Document] import failed …";
+  GoodNotes tombstones the partial document itself.
+- Imported: "Bulk imported 9 events", "Ended import background task. reason=import-operation-completed";
+  projection comment_thread is_erased=0 for all five, comment author_name "Taylor".
+  projection comment.content (= event 133 field 4, LWW value):
+    08s 0A0B 0A09 "a comment"           08t 0A09 "a comment"
+    08x 0A09 "a comment" 122E… (text + style attrs + paragraph block)
+    08u/08z 127A 6276 3431… (compressed sticky-text blob, "a comment" inside)
+- Marker: blue bubble at ~(198,196) page units in every imported file (anchor = bare point 200,200).
+- Re-exports (08s, 08t, 08x — the three that show text): GoodNotes writes event 133 field 4 back
+  unchanged: LWW{1: Text{1:"a comment" [, 2 attrs, 3 block]}, 2 stamp}; no 137 commentThreadErased,
+  no sticky item. 08s keeps the extra nesting LWW{1:{1:{1:"a comment"}}}.
+
+Conclusion
+- Comment content that GoodNotes shows: LWW{1: Text{1: string}} (08t), optionally with the
+  rich-text attribute/block fields (08x). The extra wrapper (08s) also shows but adds a blank line.
+  Raw/compressed sticky-text (08u, 08z) imports but shows nothing; wrapping a full sticky text or
+  container (08v, 08w) or the raw blob unwrapped (08y) is rejected. 08e (current default) is rejected.
+- Note: our `goodnotes info` mis-prints 08t/08x re-export content (dumps the nested message as text).
+
+Needs your eyes
+- 08s: the extra blank line above "a comment" in the panel (08s_comments_panel.png).
+
+Files: <name>_page_marker.png, <name>_comments_panel.png (screencapture -l), and GoodNotes
+re-exports 08s/08t/08x .goodnotes.
