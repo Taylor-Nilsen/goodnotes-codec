@@ -959,7 +959,10 @@ class TextRun:
         self.line_height, self.indent = line_height, indent
         self.space_after, self.space_before = space_after, space_before
 
-    ALIGN = {"left": 0, "center": 1, "right": 2, "justify": 3, "justified": 3}
+    # as GoodNotes renders them (import round 8, 05b): 1 left, 2 center, 3 right; 4 justify by
+    # extension (not yet seen rendered); 0 = natural (left)
+    ALIGN = {"left": 1, "center": 2, "right": 3, "justify": 4, "justified": 4}
+    ALIGN_NAMES = {0: "left", 1: "left", 2: "center", 3: "right", 4: "justify"}
     LISTS = {"bullet": 0, "bulleted": 0, "number": 1, "numbered": 1}
 
     def to_msg(self) -> Msg:
@@ -1031,7 +1034,7 @@ class TextRun:
         if ls is not None and ls.int(1) in (0, 1) and ls.has(1) and ls.int(1) < (1 << 63):
             r.list_style = "bullet" if ls.int(1) == 0 else "number"
         if p.has(4):
-            r.align = {0: "left", 1: "center", 2: "right", 3: "justify"}.get(p.int(4))
+            r.align = TextRun.ALIGN_NAMES.get(p.int(4))
         if p.has(5):
             r.space_after = p.float(5)
         if p.has(6):

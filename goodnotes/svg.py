@@ -326,7 +326,7 @@ def _box_svg(b: Box) -> str:
     attrs = t.path(5, 1) if t is not None else None
     size = attrs.float(40) if attrs is not None else 24.0
     para = t.path(5, 2) if t is not None else None
-    align = {0: "left", 1: "center", 2: "right", 3: "justify"}.get(para.int(4), "left") if para is not None else "left"
+    align = TextRun.ALIGN_NAMES.get(para.int(4), "left") if para is not None else "left"
     out.append(_text_svg(b.text, x + pad, y + pad * 0.5, max(w - 2 * pad, 1), size or 24.0, default_align=align))
     out.append("</g>")
     return "".join(out)

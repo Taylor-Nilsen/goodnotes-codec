@@ -215,6 +215,8 @@ class ItemsTest(unittest.TestCase):
             spans = box.text.spans()
             self.assertEqual(box.text.text, "".join(r.text for r in runs))
             self.assertEqual((spans[0].heading, spans[0].align, spans[0].bold), (1, "center", True))
+            # GoodNotes renders alignment 2 as centered (import round 8): stored value, not just the name
+            self.assertEqual(rt.msg.sub(1).path(3).int(4), 2)
             self.assertEqual((spans[2].link, spans[2].underline), ("https://example.com", True))
             self.assertEqual((spans[3].strike, spans[3].italic, spans[3].highlight[:3]), (True, True, (1.0, 1.0, 0.0)))
             # the newline that ends paragraph 2 keeps paragraph 2's attributes; "item one" starts a bulleted one

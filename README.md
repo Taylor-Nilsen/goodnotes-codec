@@ -131,16 +131,16 @@ own page renderings were checked.
 | Pencil | ✅ | ✅ | ✅ grain renders (checked 2026-10-20); darkness follows pressure |
 | Eraser (split ink), lasso move, group, z-order, duplicate, delete | ✅ | ✅ | ✅ |
 | Shapes: rect/rounded/ellipse/polygon, fill, outline, dashes, rotation, shadow, lock, filled shapes | ✅ | ✅ | ✅ |
-| Rich text: font, size, color, bold, italic, underline, strike, link, highlight, lists, headings, alignment | ✅ | ✅ | ✅ renders (alignment rendering not fully confirmed) |
+| Rich text: font, size, color, bold, italic, underline, strike, link, highlight, lists, headings, alignment | ✅ | ✅ | ✅ renders; alignment values corrected after round 8 (re-check pending) |
 | Text boxes that wrap | ✅ | ✅ | ✅ wraps at the max width (GoodNotes lays out at the stored measured size) |
 | Sticky notes (author, expanded) | ✅ | ✅ | ✅ |
 | Lines, curves, elbow connectors, arrowheads, dashes | ✅ | ✅ | ✅ |
 | Images (placed, rotated, locked), PDF stickers | ✅ | ✅ | ✅ |
 | Math conversions (LaTeX + image) | ✅ | ✅ | ⚠️ imports and the record survives, but GoodNotes does not draw it |
 | Pages: add/insert/move/delete/duplicate, paper, PDF background, PDF/image import | ✅ | ✅ | ✅ |
-| Built-in Essentials paper at any size, image backgrounds | ✅ | ✅ | ✅ narrow ruled renders; other templates and backgrounds not yet checked |
+| Built-in Essentials paper at any size, image backgrounds | ✅ | ✅ | ✅ all 5 templates on white/yellow/black, A4 landscape, Letter, custom size, PNG/PDF/copied backgrounds (checked 2026-10-20) |
 | Bookmarks, rotation, labels, outline (nested) | ✅ | ✅ | ✅ (read flag is per-user state; GoodNotes drops it on import) |
 | Audio notes, transcripts | ✅ | ✅ | ✅ audio note, name and page references (checked 2026-10-20, GoodNotes re-export keeps them) |
-| Comments (threads, replies, resolve) | ✅ | ✅ | ✅ comments and replies import, pinned, with text (checked 2026-10-20; events match a comment made in GoodNotes); plain text; resolve not yet checked |
+| Comments (threads, replies, resolve) | ✅ | ✅ | ✅ comments and replies import, pinned, with text (checked 2026-10-20; events match a comment made in GoodNotes); plain text; resolve works (GoodNotes for Mac hides resolved threads) |
 | Legacy text boxes, Text Docs (Yjs), graph widgets | ✅ | round-trip | — |
 | SVG export/import, vector PDF export | ✅ | ✅ | — |
