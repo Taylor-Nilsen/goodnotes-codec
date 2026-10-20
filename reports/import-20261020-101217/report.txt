@@ -1,0 +1,50 @@
+GoodNotes import report — round 4 — 2026-10-20 10:12 UTC
+Branch feat/full-format @ 81f36b8, python3 -m unittest: 41 OK.
+Kit: python3 -m goodnotes testkit <tmp> --only 08e,10a. Both imported to "Test" via background
+accessibility. Exports and the two screen checks needed real pointer input / save panels, so they
+were done in one full-screen batch after HIDIdleTime >= 120 s (~2 min, 10:14-10:16 UTC), then the
+screen was handed back. Both notebooks then moved to GoodNotes trash (deleted=1). No crash reports.
+
+Files here
+  08e_comment.pdf / 08e_comment.goodnotes                      GoodNotes' own exports
+  10a_audio_note_with_page_refs.pdf / .goodnotes               GoodNotes' own exports
+  08e_sticky_selected_marker.png, 08e_comment_sticky_editing.png   screencapture -l <window>
+  10a_audio_panel.png                                          screencapture -l <window>
+
+08e_comment — IMPORTED (thread + comment land) but GoodNotes converts it to a sticky note
+  Import: "Bulk imported 9 events", doc 472E51E4, comment_thread=1, comment=1.
+  projection comment_thread: id 10FD65AF…, first_comment_id 57C6C817…, anchor =
+    {1 pageId A0A58324…92, 3 sticky {1 expanded=1, 3 size=(256,256), 5 position=(200,200), 6 showAuthor=1}}
+  projection comment: content LWW{1:"a comment"}, author_name "Taylor", is_deleted 0.
+  On screen: a yellow sticky with "Taylor" sits at the page's TOP-LEFT corner (0,0), ~256 pt
+  square — not at (200,200). Its text is EMPTY ("a comment" is not shown; double-click opens an
+  empty text editor, see 08e_comment_sticky_editing.png). The comment toolbar button opens a new,
+  empty comments panel, so there is no thread panel showing "a comment" by Taylor any more.
+  Why (from GoodNotes' re-export, index.events.pb): after our 130 commentThreadCreated and 133
+  commentCreated it appended 106 notesItemImported (10:12:28.78) and 137 commentThreadErased
+  (10:12:30, 1.4 s after import — before any interaction). The page now holds a stickyNote item
+  with the thread's id 10FD65AF…: position(7)=(200,200), sizing(21)=256x256, transform(20)={1:"",3:1.0},
+  richText(31) empty, authorName(33)="Taylor", expanded(40)=1, showAuthor(41)=1.
+  So: an expanded sticky anchor is migrated into a sticky item; position is copied but not applied
+  (transform has no translation), and the comment text is not carried over.
+  PDF export: sticky drawn top-left, empty, "Taylor" label.
+
+10a_audio_note_with_page_refs — IMPORTED, name and both page links land
+  Import: "Bulk imported 10 events", doc D9B34805, audioNote=1.
+  projection audioNote CA684F92…: durationFlicks 1411200000 (2 s),
+    audioName = LWW{1:"Test recording"} (hex 0A0E54657374207265636F7264696E67…),
+    references = {"values":{"1C56CDB2…":{"timestampFlicks":"705600000","pageId":"2AD4D6F8…"},
+                            "13C4922D…":{"pageId":"2AD4D6F8…"}}}   -> 1 s and 0 s, same page.
+  On screen: Audio panel lists "Test recording" (Oct 20, 2026); player shows 00:00–00:02 and
+  the name. The panel shows no visible page-link markers on the scrubber (GoodNotes' UI doesn't
+  draw them there; not proof either way).
+  GoodNotes' re-export keeps 160 audioNoteCreated with both refs (it omits timestampFlicks for the
+  0 s ref; we write an explicit 1:0 — harmless) and 164 audioNoteRenamed "Test recording".
+  PDF export: page renders normally (audio is not part of PDF).
+
+Needs your eyes
+- 08e: decide whether we want comments to survive as comments: GoodNotes erases a thread whose
+  anchor has an expanded sticky (stickyNote.expanded=1) and turns it into a sticky item. Try
+  expanded=0 (or no sticky) and a position GoodNotes applies (transform translation).
+- 08e: comment text is lost in that migration (sticky richText empty).
+- 10a: play the recording to check whether GoodNotes jumps to the page at 0 s / 1 s.
