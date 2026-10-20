@@ -31,6 +31,9 @@ import sys
 import zlib
 from dataclasses import dataclass
 
+
+STRICT = False  # tests set this: raise instead of skipping an element that fails to render
+
 from .model import (arc_through, DW_SCHEMA, PENCIL_SCHEMA, PT_PER_UNIT, VW_SCHEMA, Box, Document, FillShape,
                     Image, Item, LegacyText, Line, Page, RichText, Sticky, Stroke, TextDoc, TextRun,
                     f32, image_size, is_constant_width, read_point)
@@ -319,7 +322,6 @@ def _show(cv: _Canvas, text: str, font: str, size: float, x: float, y: float, co
     cv.op(f"BT /{name} {_n(size)} Tf {_ns(1, 0, 0, -1, x, y)} Tm {_pdf_string(_encode(text))} Tj ET")
 
 
-_HEADING = {1: 1.6, 2: 1.4, 3: 1.2}
 
 
 @dataclass
@@ -394,9 +396,8 @@ def _layout(rt: RichText | None, width: float, default_size: float = 24.0,
         segs = []
         for r in para:
             sz = r.size or default_size
-            if r.heading:
-                sz *= _HEADING.get(r.heading, 1.1)
-            segs.append(_Seg(r, r.text, _font_name(r.bold or r.heading, r.italic), sz))
+            # GoodNotes for Mac draws a heading paragraph like body text (final regression, 05)
+            segs.append(_Seg(r, r.text, _font_name(r.bold, r.italic), sz))
         size = max((s.size for s in segs), default=default_size)
         h = size * (first.line_height if first and first.line_height else 1.2)
         align = first.align if first and first.align else default_align
@@ -427,15 +428,16 @@ def _draw_text(cv: _Canvas, rt: RichText | None, x: float, y: float, width: floa
             r = s.run
             color = r.color if r.color is not None else default_color
             cv.op("q")
-            if r.highlight:
-                cv.style(fill=r.highlight)
-                cv.op(f"{_ns(tx, base - s.size * 0.85, sw, s.size * 1.1)} re f")
+            # no text highlight: GoodNotes for Mac never draws one (final regression, 05)
             if s.text:
                 _show(cv, s.text, s.font, s.size, tx, base, color)
             for on, dy in ((r.underline, s.size * 0.1), (r.strike, -s.size * 0.28)):
                 if on and sw > 0:
                     cv.style(stroke=color, width=s.size * 0.05, cap=0)
                     cv.op(f"{_ns(tx, base + dy)} m {_ns(tx + sw, base + dy)} l S")
+            if r.link and not r.underline and sw > 0:  # GoodNotes marks a link with a dotted blue underline
+                cv.style(stroke=(0.2, 0.5, 1.0, 1.0), width=s.size * 0.05, cap=0, dash=[s.size * 0.12, s.size * 0.12])
+                cv.op(f"{_ns(tx, base + s.size * 0.12)} m {_ns(tx + sw, base + s.size * 0.12)} l S")
             cv.op("Q")
             tx += sw
 
@@ -602,10 +604,7 @@ def _draw_stroke(cv: _Canvas, s: Stroke) -> None:
             return
         w = f32(t.values[1])
         dash, cap = None, 1  # GoodNotes draws highlighter ends round too (full test, 02)
-        d = s.dash
-        if d and d[0]:
-            dash = [max(v * w, 0.01) for v in d[0]]
-            cap = d[1]
+        # a dashed pen stroke is drawn solid, as GoodNotes for Mac draws it (final regression, 02)
         cv.style(stroke=color, width=w, cap=cap, join=1, dash=dash, multiply=mul)
         cv.path(segs, dot_subpaths=True)
         cv.op("S")
@@ -1062,6 +1061,8 @@ def page_to_pdf_ops(doc: Document, page: Page, background: bool = True,
         try:
             fn(sub, *args)
         except (ValueError, IndexError, KeyError, TypeError, AttributeError, struct.error, zlib.error):
+            if STRICT:
+                raise
             return
         if sub.ops:
             cv.op("q")

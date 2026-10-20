@@ -28,6 +28,9 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from . import schema as S
+
+STRICT = False  # tests set this: raise instead of skipping an element that fails to render
+
 from .model import (arc_through, DW_SCHEMA, PENCIL_SCHEMA, PSTROKE, VW_SCHEMA, Box, Document, FillShape, Image, Item,
                     LegacyText, Line, Math, Msg, Page, RichText, Sticky, Stroke, TextDoc, f32, is_constant_width,
                     new_box, new_brush_stroke, new_fountain_stroke, new_image, new_line,
@@ -243,7 +246,7 @@ def _wrap(para, width, default_size):
         for w in re.split(r"(\s+)", r.text):
             if not w:
                 continue
-            ww = _text_width(w, _font_name(r.bold or r.heading, r.italic), size)
+            ww = _text_width(w, _font_name(r.bold, r.italic), size)
             if cur and cur_w + ww > width and not w.isspace():
                 lines.append(cur)
                 cur, cur_w = [], 0.0
@@ -266,9 +269,8 @@ def _text_line(para, first, x, baseline, width, default_size, default_font, defa
         col, al = _rgba(r.color if r.color is not None else default_color)
         deco = " ".join(k for k, on in (("underline", r.underline), ("line-through", r.strike)) if on)
         sz = r.size or default_size
-        if r.heading:
-            sz *= {1: 1.6, 2: 1.4, 3: 1.2}.get(r.heading, 1.1)
-        style = f"font-style:{'italic' if r.italic else 'normal'};font-weight:{'bold' if r.bold or r.heading else 'normal'}"
+        # GoodNotes for Mac draws a heading paragraph like body text (final regression, 05)
+        style = f"font-style:{'italic' if r.italic else 'normal'};font-weight:{'bold' if r.bold else 'normal'}"
         if deco:
             style += f";text-decoration:{deco}"
         if r.highlight:
@@ -385,7 +387,7 @@ def _line_svg(ln: Line, marker_id: str) -> str:
         else:
             d = f"M {_fmt(*start)} H {end[0]:.2f} V {end[1]:.2f}"
     elif ln.mid is not None and arc_through(start, ln.mid, end):
-        r, sweep = arc_through(start, ln.mid, end)[2:]  # GoodNotes: circular arc through the mid point
+        r, sweep = arc_through(start, ln.mid, end)[2], arc_through(start, ln.mid, end)[4]  # GoodNotes: circular arc through the mid point
         d = f"M {_fmt(*start)} A {r:.2f} {r:.2f} 0 {int(abs(sweep) > math.pi)} {int(sweep > 0)} {_fmt(*end)}"
     else:
         d = f"M {_fmt(*start)} L {_fmt(*end)}"
@@ -492,6 +494,8 @@ def page_to_svg(doc: Document, page: Page, background: bool = True) -> str:
             elif k == "textdoc":
                 body.append(_textdoc_svg(it, page))
         except (ValueError, IndexError, KeyError) as e:
+            if STRICT:
+                raise
             body.append(f"<!-- {k} {it.id}: {html.escape(str(e))} -->")
     defs = ('<defs><marker id="arrow1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" '
             'orient="auto-start-reverse" markerUnits="strokeWidth"><path d="M 0 0 L 10 5 L 0 10" fill="none" '

@@ -142,7 +142,7 @@ own page renderings were checked.
 | Math conversions (LaTeX + image) | ✅ | ✅ | ⚠️ imports and the record survives, but GoodNotes does not draw it |
 | Pages: add/insert/move/delete/duplicate, paper, PDF background, PDF/image import | ✅ | ✅ | ✅ |
 | Built-in Essentials paper at any size, image backgrounds | ✅ | ✅ | ✅ all 5 templates on white/yellow/black, A4 landscape, Letter, custom size, PNG/PDF/copied backgrounds (checked 2026-10-20) |
-| Bookmarks, rotation, labels, outline (nested), favourite | ✅ | ✅ | ✅ (favourite fixed after the full test, re-check pending; the read flag is per-user state, dropped on import) |
+| Bookmarks, rotation, labels, outline (nested), favourite | ✅ | ✅ | ✅ except favourite: GoodNotes drops it on import, even from its own export (final regression); the read flag is likewise per-user and dropped |
 | Audio notes, transcripts | ✅ | ✅ | ✅ audio note, name and page references (checked 2026-10-20); GoodNotes plays MP4/AAC (.m4a), not WAV |
 | Comments (threads, replies, resolve) | ✅ | ✅ | ✅ comments and replies import, pinned, with text (checked 2026-10-20; events match a comment made in GoodNotes); plain text; resolve works (GoodNotes for Mac hides resolved threads) |
 | Legacy text boxes, Text Docs (Yjs), graph widgets | ✅ | round-trip | — |
