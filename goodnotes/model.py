@@ -2845,7 +2845,8 @@ class Document:
         refs = Msg()  # {1 map<ref id, {1 timestampFlicks, 2 pageId}>}, as in real notes
         for t in (offsets if offsets is not None else ([0.0] if page is not None else [])):
             v = Msg()
-            v.set_int(1, int(t * FLICKS))
+            if t:
+                v.set_int(1, int(t * FLICKS))  # GoodNotes leaves out a 0 s timestamp
             v.set_bytes(2, page.page_id)
             refs.add(1, LEN, Msg([[1, LEN, new_uuid().encode()], [2, LEN, v]]))
         body.set_bytes(5, refs)
@@ -2884,7 +2885,8 @@ class Document:
                 if anchor is not None and anchor.sub(1) is not None and anchor.sub(1).has(1):
                     anchor = anchor.sub(1)  # written as an LWW register {1 anchor, 2 stamp}
                 page = by_id.get(anchor.str(1)) if anchor is not None else None
-                pos = read_point(anchor.path(3, 5)) if anchor is not None and anchor.path(3, 5) is not None else (0.0, 0.0)
+                pin = None if anchor is None else (anchor.path(2, 1) or anchor.path(3, 5))  # region origin, or legacy sticky
+                pos = read_point(pin) if pin is not None else (0.0, 0.0)
                 threads[b.str(1)] = {"id": b.str(1), "page": page, "position": pos, "resolved": False, "comments": []}
             b = e.sub(133)
             if b is not None and b.str(2) in threads:
@@ -2921,14 +2923,9 @@ class Document:
             tb.set_bytes(3, lww(key_between(None, None)))
             anchor = Msg()
             anchor.set_bytes(1, page.page_id)
-            sticky = Msg()
-            sticky.set_int(1, 1)
-            # ponytail: no field 2 (color): GoodNotes declares it a string of unknown format, and a
-            # color message there makes it reject the file; add it once a real comment shows the format
-            sticky.set_bytes(3, write_point(256.0, 256.0))
-            sticky.set_bytes(5, write_point(*position))
-            sticky.set_int(6, 1)
-            anchor.set_bytes(3, sticky)
+            # region {1 origin, 2 size} pins the comment. (A stickyNote in field 3 is the legacy
+            # sticky comment: GoodNotes turns it into a sticky item and erases the thread.)
+            anchor.set_bytes(2, Msg([[1, LEN, write_point(*position)], [2, LEN, write_point(1.0, 1.0)]]))
             tb.set_bytes(4, lww(anchor))
             tb.set_bytes(5, cid)
             self._event(130, thread, tb, version_field=16)

@@ -140,7 +140,7 @@ own page renderings were checked.
 | Pages: add/insert/move/delete/duplicate, paper, PDF background, PDF/image import | ✅ | ✅ | ✅ |
 | Built-in Essentials paper at any size, image backgrounds | ✅ | ✅ | ✅ narrow ruled renders; other templates and backgrounds not yet checked |
 | Bookmarks, rotation, labels, outline (nested) | ✅ | ✅ | ✅ (read flag is per-user state; GoodNotes drops it on import) |
-| Audio notes, transcripts | ✅ | ✅ | ✅ audio note and name; page references in the format GoodNotes itself writes (re-check pending) |
-| Comments (threads, replies, resolve) | ✅ | ✅ | ✅ threads and comments import (each part checked separately; combined re-check pending); no comment color |
+| Audio notes, transcripts | ✅ | ✅ | ✅ audio note, name and page references (checked 2026-10-20, GoodNotes re-export keeps them) |
+| Comments (threads, replies, resolve) | ✅ | ✅ | ⚠️ threads and comments import; pinning by region under test (a sticky anchor is turned into a sticky note) |
 | Legacy text boxes, Text Docs (Yjs), graph widgets | ✅ | round-trip | — |
 | SVG export/import, vector PDF export | ✅ | ✅ | — |

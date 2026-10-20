@@ -164,6 +164,36 @@ def make_testkit(directory, only=None) -> list[str]:
         d.add_comment(d.pages[0], (200, 200), "a comment", author="Taylor")
     kits["08e_comment"] = comment
 
+    def _region_comment(d, region):
+        """Round 5: 08e's region {1 origin, 2 size} vs other region encodings."""
+        from .model import Msg, lww, new_uuid, key_between
+        thread, cid = new_uuid(), new_uuid()
+        anchor = Msg()
+        anchor.set_bytes(1, d.pages[0].page_id)
+        if region is not None:
+            anchor.set_bytes(2, region)
+        tb = Msg()
+        tb.set_bytes(1, thread)
+        tb.set_bytes(2, d.doc_id)
+        tb.set_bytes(3, lww(key_between(None, None)))
+        tb.set_bytes(4, lww(anchor))
+        tb.set_bytes(5, cid)
+        d._event(130, thread, tb, version_field=16)
+        cb = Msg()
+        cb.set_bytes(1, cid)
+        cb.set_bytes(2, thread)
+        cb.set_bytes(3, d.doc_id)
+        cb.set_bytes(4, lww("a comment"))
+        cb.set_bytes(5, lww(key_between(None, None)))
+        cb.set_bytes(7, "Taylor")
+        d._event(133, cid, cb)
+    from .model import Msg as _Msg, write_point as _pt
+    kits["08p_comment_region_point"] = lambda d: _region_comment(d, _pt(200.0, 200.0))
+    kits["08q_comment_region_rect_40"] = lambda d: _region_comment(
+        d, _Msg([[1, LEN, _pt(200.0, 200.0)], [2, LEN, _pt(40.0, 40.0)]]))
+    kits["08r_comment_region_wrapped"] = lambda d: _region_comment(
+        d, _Msg([[1, LEN, _Msg([[1, LEN, _pt(200.0, 200.0)], [2, LEN, _pt(1.0, 1.0)]])]]))
+
     def erase(d):
         p = d.pages[0]
         p.append(new_stroke(d, [("M", (60, 200)), ("L", (500, 200))], (0, 0, 0, 1), 3))
