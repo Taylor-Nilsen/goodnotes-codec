@@ -221,15 +221,16 @@ def make_testkit(directory, only=None) -> list[str]:
     # Round 8: what README still lists as not checked. Each page says what it should look like.
     from . import paper as P
 
-    def label(d, page, text):
-        page.append(new_text_box(d, (60, 40), text, max_width=600, font_size=20))
+    def label(d, page, text, dark=False):
+        color = (0.95, 0.95, 0.95, 1) if dark else (0.118, 0.106, 0.106, 1)  # readable on black paper
+        page.append(new_text_box(d, (60, 40), rich_text(text, color=color, size=20), max_width=600))
 
     def paper_templates(d):
         combos = [(t, c) for c in ("white", "yellow", "black") for t in sorted(P.TEMPLATES)]
         for i, (t, c) in enumerate(combos):
             page = d.pages[0] if i == 0 else d.add_page()
             d.set_paper(page, t, c)
-            label(d, page, f"{t} on {c}")
+            label(d, page, f"{t} on {c}", dark=c == "black")
     kits["13a_paper_templates"] = paper_templates
 
     def paper_sizes(d):
@@ -239,7 +240,7 @@ def make_testkit(directory, only=None) -> list[str]:
                 ("squared", "black", (900, 1200), None, "custom 900 x 1200, squared, black")]):
             page = d.pages[0] if i == 0 else d.add_page()
             d.set_paper(page, t, c, size, landscape=land)
-            label(d, page, what)
+            label(d, page, what, dark=c == "black")
     kits["13b_paper_sizes"] = paper_sizes
 
     def backgrounds(d):
@@ -258,7 +259,7 @@ def make_testkit(directory, only=None) -> list[str]:
         other = Document.new("other", "dotted", "black")
         p3 = d.add_page()
         d.set_background(p3, other, pdf_page=1)
-        label(d, p3, "paper copied from another notebook: dotted on black")
+        label(d, p3, "paper copied from another notebook: dotted on black", dark=True)
     kits["14_backgrounds"] = backgrounds
 
     def comment_resolved(d):
