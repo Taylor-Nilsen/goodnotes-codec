@@ -94,3 +94,20 @@ class NotesVersionTest(unittest.TestCase):
             v2 = versions(Document(path), doc.pages[0])
             self.assertEqual(len(v2), 2)
             self.assertNotEqual(v2[0], v2[1])
+
+
+class AttachmentEventTest(unittest.TestCase):
+    def test_image_attachment_matches_goodnotes(self):
+        """A PNG pasted in GoodNotes 6 Mac: empty pageRange, no 105 event."""
+        doc = Document.new()
+        img = new_image(doc, PNG, (50, 50), (20, 10))
+        aid = img.body.str(4)
+        att = [e.sub(6) for e in doc.events if e.has(6) and e.str(1) == aid]
+        self.assertEqual(len(att), 1)
+        self.assertEqual(att[0].bytes(12), b"")
+        self.assertFalse(any(e.has(105) and e.str(1) == aid for e in doc.events))
+        # the paper PDF keeps its page range and search-index event
+        paper = doc.pages[0].background[0]
+        pr = next(e.sub(6) for e in doc.events if e.has(6) and e.str(1) == paper).sub(12)
+        self.assertEqual((pr.int(1), pr.int(2)), (1, 1))
+        self.assertTrue(any(e.has(105) and e.str(1) == paper for e in doc.events))

@@ -108,8 +108,8 @@ last-writer-wins.
 | 2 | paper layer: `4 background attachment, 5 PDF page, 8 page size, 9 template name` |
 | 54 | page: `2 page id, 3 {1 layer id}, 4 {1 order key}` |
 | 104 / 102 / 10 | page ink file created / linked / page inserted |
-| 105.5 / 104.12 | notes version: a random 63-bit id GoodNotes writes (105 then 104, then 102) once a page's notes hold items. **Required**: on import GoodNotes re-keys every item of an unversioned group (old id in meta 6, old attachment in meta 7, a 106 event listing the old ids) and the re-keyed images' attachments are never stored, so sync drops them |
-| 6 | attachment added: `5 byte size, 6 document id` — **required**, or GoodNotes ignores the attachment |
+| 105.5 / 104.12 | notes version: a random 63-bit id GoodNotes writes (105 then 104, then 102) once a page's notes hold items |
+| 6 | attachment added: `5 byte size, 6 document id, 12 pageRange {1 first, 2 count}` — **required**, or GoodNotes ignores the attachment. pageRange is for PDFs only; images and audio carry it empty (GoodNotes 6 Mac, pasted PNG). Codec PNGs written with a page range went blank once the share link was turned on. Only PDFs get a 105 search-index event |
 | 57 | bookmark `3 {1 1}` · 63 rotation `3 {1 quarter turns}` · 65 outline entry `4 order key, 5 title` |
 | 160, 161, 210, 213 | audio recordings and per-word transcript timings |
 

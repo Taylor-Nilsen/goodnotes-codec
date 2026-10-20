@@ -1233,10 +1233,7 @@ class Document:
     def _notes_events(self, nid: str, did: str, version: int = 0) -> None:
         """Store (105), index (104) and items-updated (102) events for a
         notes group. `version` is the random 63-bit id GoodNotes stamps on
-        105.5 / 104.12 once the group holds items. A group with items and
-        no version is foreign to GoodNotes: on import it re-keys every item
-        and points images at new attachment ids it never stores, so sync
-        drops the images."""
+        105.5 / 104.12 once the group holds items."""
         now = time.time() * 1000
         store = Msg()
         store.set_int(1, 1)
@@ -1326,9 +1323,15 @@ class Document:
         body.set_bytes(6, self.doc_id or new_uuid())
         body.set_double(10, now)
         body.set_bytes(11, new_uuid())
-        # ponytail: counts "/Type /Page" objects; fine for the generated one-page PDFs and most others
-        pages = len(re.findall(rb"/Type\s*/Page(?![s\w])", data)) or 1 if data[:4] == b"%PDF" else 1
-        body.set_bytes(12, Msg([[1, VARINT, 1], [2, VARINT, pages]]))  # pageRange {firstPage, numberOfPages}
+        pdf = data[:4] == b"%PDF"
+        if pdf:
+            # ponytail: counts "/Type /Page" objects; fine for the generated one-page PDFs and most others
+            pages = len(re.findall(rb"/Type\s*/Page(?![s\w])", data)) or 1
+            body.set_bytes(12, Msg([[1, VARINT, 1], [2, VARINT, pages]]))  # pageRange {firstPage, numberOfPages}
+        else:
+            # images and audio: empty pageRange, as GoodNotes writes them. A page
+            # range on a PNG coincided with the share link blanking every image
+            body.set_bytes(12, b"")
         body.set_int(14, self.device)
         body.set_int(15, int(now))
         body.set_int(16, SCHEMA_VERSION)
@@ -1336,10 +1339,11 @@ class Document:
         ev.set_bytes(1, aid)
         ev.set_bytes(6, body)
         self.events.append(ev)
-        store = Msg()  # indexStoreUpdated for the attachment (search index)
-        store.set_bytes(2, self.doc_id or new_uuid())
-        store.set_bytes(3, aid)
-        self._event(105, aid, store)
+        if pdf:  # GoodNotes search-indexes PDFs only
+            store = Msg()  # indexStoreUpdated for the attachment (search index)
+            store.set_bytes(2, self.doc_id or new_uuid())
+            store.set_bytes(3, aid)
+            self._event(105, aid, store)
         return aid
 
     # page structure
