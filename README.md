@@ -17,7 +17,7 @@ Reverse-engineered; not affiliated with GoodNotes. Format notes:
 ```python
 from goodnotes.model import Document, Stroke, new_box, new_stroke, rich_text
 
-doc = Document("template.goodnotes")       # any existing document
+doc = Document("template.goodnotes")       # any notebook exported from GoodNotes
 page = doc.pages[0]                         # pages are in document order
 
 page.append(new_stroke(doc, [("M", (60, 100)), ("Q", (200, 40), (340, 100))],
@@ -32,6 +32,13 @@ for item in page.visible():                 # edit what's already there
 
 doc.save("out.goodnotes")                   # File > Import in GoodNotes
 ```
+
+The base must be a real notebook exported from GoodNotes; the library can't
+create one from nothing. `save()` refuses (ValueError) to write a file GoodNotes
+won't open: the fake test document in `tests/synthetic.py`, pages missing
+their events or index entries, duplicate page order keys, or attachments
+missing from the zip, `index.attachments.pb` or the event log. It re-reads the
+file before replacing `path`. `doc.problems()` lists the same checks.
 
 ### Paper and backgrounds
 

@@ -2,6 +2,7 @@ import os
 import tempfile
 import unittest
 
+from goodnotes import model
 from goodnotes.model import Document, key_between, uuid_plus
 from tests import synthetic
 
@@ -45,6 +46,22 @@ class DocumentTest(unittest.TestCase):
         doc.delete_page(new)
         doc.save(out)
         self.assertEqual(len(Document(out).pages), 2)
+
+    def test_refuses_fixture_and_broken_documents(self):
+        model.ALLOW_TEST_FIXTURE = False
+        try:
+            with self.assertRaisesRegex(ValueError, "fake test document"):
+                Document(self.path)
+        finally:
+            model.ALLOW_TEST_FIXTURE = True
+        doc = Document(self.path)
+        out = os.path.join(self.dir.name, "o.goodnotes")
+        aid = doc.add_attachment(b"%PDF-1.7")
+        doc.pages[0].layer.set_bytes(4, aid)
+        doc.files.pop(f"attachments/{aid}")
+        with self.assertRaisesRegex(ValueError, "missing from zip"):
+            doc.save(out)
+        self.assertFalse(os.path.exists(out))
 
 
 if __name__ == "__main__":

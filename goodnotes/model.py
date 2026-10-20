@@ -449,6 +449,11 @@ def write_point(x: float, y: float) -> Msg:
 SCHEMA_VERSION = 24  # stamped on every record GoodNotes writes (field 16/18/21/...)
 DJB2_EMPTY = 5381
 
+# tests/synthetic.py builds a fake document with this id. GoodNotes can't open
+# it, so Document refuses it unless the test suite flips the flag below.
+FIXTURE_DOC_ID = "D0C00000-0000-4000-8000-000000000000"
+ALLOW_TEST_FIXTURE = False
+
 
 # --- page items ------------------------------------------------------------
 
@@ -1031,6 +1036,10 @@ class Page:
         return f"<Page {self.key!r} {self.uuid} {len(self.records)} records>"
 
 
+_FIXTURE_MSG = ("this is the fake test document from tests/synthetic.py, which GoodNotes can't "
+                "open. Use a notebook exported from GoodNotes as the base (File > Export > GoodNotes).")
+
+
 def _event_body(e: Msg) -> Msg | None:
     """An event is {1: target id, N: body}; returns body (N varies by type)."""
     for f in e.fields:
@@ -1096,6 +1105,8 @@ class Document:
             self.pages.append(Page(uid, [Msg.parse(m) for m in iter_delimited(data)], ev, layer))
         if all(p.event is not None for p in self.pages):
             self.pages.sort(key=lambda p: p.key)
+        if self.doc_id == FIXTURE_DOC_ID and not ALLOW_TEST_FIXTURE:
+            raise ValueError(_FIXTURE_MSG)
 
     # attachments
     @property
@@ -1364,7 +1375,57 @@ class Document:
         ev = self._event(65, page.page_id, body, version_field=16)
         ev.sub(65).set_int(16, 26)  # outline records carry 26, not 24
 
+    def problems(self) -> list[str]:
+        """Reasons GoodNotes would fail to open or would drop content from
+        this document; empty when it's fine. `save` refuses unless empty."""
+        out = []
+        if self.doc_id is None:
+            out.append("no document event (30): this isn't a GoodNotes document")
+        elif self.doc_id == FIXTURE_DOC_ID and not ALLOW_TEST_FIXTURE:
+            out.append(_FIXTURE_MSG)
+        if not self.pages:
+            out.append("no pages")
+        indexed = {Msg.parse(m).str(1) for m in iter_delimited(self.files.get("index.notes.pb", b""))}
+        registered = {Msg.parse(m).str(1) for m in iter_delimited(self.files.get("index.attachments.pb", b""))}
+        announced = {e.str(1) for e in self.events if e.has(6)}
+        keys = [p.key for p in self.pages]
+        if len(set(keys)) != len(keys):
+            out.append("two pages share an order key, so page order is undefined")
+        for n, p in enumerate(self.pages, 1):
+            if p.event is None or p.layer is None:
+                out.append(f"page {n}: no page/paper event in index.events.pb")
+            if p.uuid not in indexed:
+                out.append(f"page {n}: missing from index.notes.pb")
+            used = [p.background[0]] if p.layer is not None and p.background[0] else []
+            for it in p.items:
+                if not it.deleted and it.kind == "image" and it.body.str(4):
+                    used.append(it.body.str(4))
+            for aid in used:
+                for ok, where in ((f"attachments/{aid}" in self.files, "zip"),
+                                  (aid in registered, "index.attachments.pb"),
+                                  (aid in announced, "an attachment event (6)")):
+                    if not ok:
+                        out.append(f"page {n}: attachment {aid} missing from {where}")
+        return out
+
     def save(self, path: str) -> None:
+        """Writes the file, refusing (ValueError) when `problems()` finds
+        anything, and re-reads it before it replaces `path`."""
+        bad = self.problems()
+        if bad:
+            raise ValueError("not saving, GoodNotes won't open this:\n  " + "\n  ".join(bad))
+        tmp = f"{path}.tmp"
+        try:
+            self._write(tmp)
+            again = Document(tmp)
+            if [p.uuid for p in again.pages] != [p.uuid for p in self.pages] or again.problems():
+                raise ValueError("saved file doesn't read back the same; not saving")
+            os.replace(tmp, path)
+        finally:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+
+    def _write(self, path: str) -> None:
         files = dict(self.files)
         files["index.events.pb"] = write_delimited(self.events)
         for p in self.pages:
