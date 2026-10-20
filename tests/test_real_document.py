@@ -106,5 +106,39 @@ class RealDocumentTest(unittest.TestCase):
         page = "914EC6B9-F794-420A-9E3E-76916A1939E4"
         self.assertEqual(_audio_refs(body.sub(3), {page: "p"}), [(0.0, "p")])
 
+    def test_comment_events_match_goodnotes(self):
+        """add_comment writes the fields and shapes GoodNotes 7 writes for a comment
+        and a reply (real events from reports/import-20261020-104843)."""
+        thread = Msg.parse(bytes.fromhex(
+            "0a2438423932383145312d414432452d343333342d413435352d3441304634364141304537439208f7010a24384239"
+            "32383145312d414432452d343333342d413435352d344130463436414130453743122443303338464641342d443941"
+            "332d344533362d393135392d4341363232304533433244351801223e0a320a244533433931303430"
+            "2d464233332d343843442d423137342d453745423637413636354539120a0d0080d04315004000441208080110b3"
+            "caf584072a243333303135373341" "2d313139352d344445452d394344442d32333430443838434234453751e4832dff"
+            "8e157a425a2434304637364241302d303736322d344139462d42453437" "2d33354231304144423430453368f0ab93"
+            "ed9bedb09e0e70a88acfbf9134800118")).sub(130)
+        reply = Msg.parse(bytes.fromhex(
+            "0a2434424342413332432d343831312d343645352d383834422d364136453533414243334537aa08ff010a24344243"
+            "42413332432d343831312d343645352d383834422d364136453533414243334537122438423932383145312d414432"
+            "452d343333342d413435352d3441304634364141304537431a244330333846464134" "2d443941332d344533362d39"
+            "3135392d43413632323045334332443522150a090a0761207265706c791208080110c1e083b309280232215f396564"
+            "6635343236" "3730636532393865353666326433363831313834376462303a0d5461796c6f72204e696c73656e5156bc7b"
+            "018f157a425a2443363944453543362d314432452d" "343439422d383539392d43433043333445433335314268f0ab"
+            "93ed9bedb09e0e70ab8acfbf91347818")).sub(133)
+        doc = Document.new("c")
+        t = doc.add_comment(doc.pages[0], (417, 513), "a comment", author="Taylor Nilsen", author_id="_u")
+        doc.add_comment(doc.pages[0], (0, 0), "a reply", author="Taylor Nilsen", author_id="_u", thread=t)
+        mine_t = next(e.sub(130) for e in doc.events if e.has(130))
+        mine_r = [e.sub(133) for e in doc.events if e.has(133)][1]
+        shape = lambda m: {f[0] for f in m.fields}
+        self.assertEqual(shape(mine_t), shape(thread))
+        self.assertEqual(shape(mine_r), shape(reply))
+        self.assertEqual((mine_t.int(3), mine_r.int(5)), (thread.int(3), reply.int(5)))  # 1, 2
+        self.assertEqual(shape(mine_t.sub(4)), shape(thread.sub(4)))                       # {1 anchor, 2 stamp}
+        self.assertEqual(shape(mine_t.path(4, 1)), shape(thread.path(4, 1)))               # {1 page, 2 point}
+        self.assertEqual(mine_t.path(4, 2).int(1), thread.path(4, 2).int(1))               # stamp counter 1
+        self.assertEqual(mine_r.sub(4).sub(1).encode(), reply.sub(4).sub(1).encode())     # {1 "a reply"}
+        self.assertEqual(doc.comments()[0]["position"], (417.0, 513.0))
+
 if __name__ == "__main__":
     unittest.main()

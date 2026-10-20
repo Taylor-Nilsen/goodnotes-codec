@@ -2928,29 +2928,31 @@ class Document:
     def add_comment(self, page: Page, position, text: str, author: str = "",
                     author_id: str = "", thread: str | None = None) -> str:
         """Starts a comment thread pinned at `position` on `page` (or adds
-        to `thread`). Returns the thread id."""
+        to `thread`). Returns the thread id. Event layout as GoodNotes 7
+        writes it (reports/import-20261020-104843, zz_real_comment)."""
         cid = new_uuid()
         if thread is None:
             thread = new_uuid()
             tb = Msg()
             tb.set_bytes(1, thread)
             tb.set_bytes(2, self.doc_id)
-            tb.set_bytes(3, lww(key_between(None, None)))
+            tb.set_int(3, 1 + sum(1 for e in self.events if e.has(130)))  # threads are numbered 1, 2, ...
             anchor = Msg()
             anchor.set_bytes(1, page.page_id)
             # region is the pin point {1 x, 2 y}. (A stickyNote in field 3 is the legacy sticky
             # comment: GoodNotes turns it into a sticky item and erases the thread.)
             anchor.set_bytes(2, write_point(*position))
-            tb.set_bytes(4, lww(anchor))
+            tb.set_bytes(4, lww(anchor, 1))
             tb.set_bytes(5, cid)
             self._event(130, thread, tb, version_field=16)
         cb = Msg()
         cb.set_bytes(1, cid)
         cb.set_bytes(2, thread)
         cb.set_bytes(3, self.doc_id)
-        cb.set_bytes(4, lww(Msg([[1, LEN, text.encode()]])))  # content: one text segment {1 text}
-        cb.set_bytes(5, lww(key_between(None, None)))
-        cb.set_bytes(6, author_id)
+        cb.set_bytes(4, lww(Msg([[1, LEN, text.encode()]]), 1))  # content: one text segment {1 text}
+        cb.set_int(5, 1 + sum(1 for e in self.events if e.has(133) and e.sub(133).str(2) == thread))  # 1 = first, 2.. replies
+        if author_id:
+            cb.set_bytes(6, author_id)
         cb.set_bytes(7, author)
         self._event(133, cid, cb)
         return thread

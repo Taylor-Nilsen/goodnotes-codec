@@ -141,6 +141,6 @@ own page renderings were checked.
 | Built-in Essentials paper at any size, image backgrounds | ✅ | ✅ | ✅ narrow ruled renders; other templates and backgrounds not yet checked |
 | Bookmarks, rotation, labels, outline (nested) | ✅ | ✅ | ✅ (read flag is per-user state; GoodNotes drops it on import) |
 | Audio notes, transcripts | ✅ | ✅ | ✅ audio note, name and page references (checked 2026-10-20, GoodNotes re-export keeps them) |
-| Comments (threads, replies, resolve) | ✅ | ✅ | ✅ import, pinned at the right spot, text shown (checked 2026-10-20); plain text only, no comment color |
+| Comments (threads, replies, resolve) | ✅ | ✅ | ✅ comments and replies import, pinned, with text (checked 2026-10-20; events match a comment made in GoodNotes); plain text; resolve not yet checked |
 | Legacy text boxes, Text Docs (Yjs), graph widgets | ✅ | round-trip | — |
 | SVG export/import, vector PDF export | ✅ | ✅ | — |
