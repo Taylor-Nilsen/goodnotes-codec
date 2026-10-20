@@ -95,7 +95,7 @@ own page renderings were checked.
 | New document from scratch (`Document.new`) | — | ✅ | ✅ imports; GoodNotes keeps every item |
 | Ballpoint ink, highlighter, dashed ink, shape-tool strokes | ✅ | ✅ | ✅ |
 | Fountain pen, brush, marker/tape (variable width, pressure) | ✅ | ✅ | ✅ kept byte-for-byte, renders with pressure |
-| Pencil | ✅ | ✅ | ✅ imports; points are now as dense as GoodNotes' own so the texture renders (re-check pending) |
+| Pencil | ✅ | ✅ | ✅ grain renders (checked 2026-10-20); darkness follows pressure |
 | Eraser (split ink), lasso move, group, z-order, duplicate, delete | ✅ | ✅ | ✅ |
 | Shapes: rect/rounded/ellipse/polygon, fill, outline, dashes, rotation, shadow, lock, filled shapes | ✅ | ✅ | ✅ |
 | Rich text: font, size, color, bold, italic, underline, strike, link, highlight, lists, headings, alignment | ✅ | ✅ | ✅ renders (alignment rendering not fully confirmed) |
@@ -106,7 +106,7 @@ own page renderings were checked.
 | Math conversions (LaTeX + image) | ✅ | ✅ | ⚠️ imports and the record survives, but GoodNotes does not draw it |
 | Pages: add/insert/move/delete/duplicate, paper, PDF background, PDF/image import | ✅ | ✅ | ✅ |
 | Bookmarks, rotation, labels, outline (nested) | ✅ | ✅ | ✅ (read flag is per-user state; GoodNotes drops it on import) |
-| Audio notes, transcripts | ✅ | ✅ | ✅ plain audio note; page references / name event under test |
-| Comments (threads, replies, resolve) | ✅ | ✅ | ❌ GoodNotes rejects the generated thread; layout under test |
+| Audio notes, transcripts | ✅ | ✅ | ✅ audio note and name; ❌ page references (encoding under test) |
+| Comments (threads, replies, resolve) | ✅ | ✅ | ⚠️ a bare thread imports; with the sticky-note anchor or a comment it is rejected (under test) |
 | Legacy text boxes, Text Docs (Yjs), graph widgets | ✅ | round-trip | — |
 | SVG export/import, vector PDF export | ✅ | ✅ | — |
