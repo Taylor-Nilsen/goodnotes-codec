@@ -20,7 +20,9 @@ GoodNotes macOS app with one feature at a time (see docs/FORMAT_NOTES.md,
 """
 from __future__ import annotations
 
+import io
 import math
+import os
 import random
 import re
 import struct
@@ -28,6 +30,7 @@ import time
 import uuid as uuidlib
 import zipfile
 
+from . import paper
 from .lz4_block import decompress_block
 
 # --- lossless protobuf -------------------------------------------------------
@@ -1234,18 +1237,48 @@ class Document:
         self.files.pop(f"notes/{page.uuid}", None)
         self.pages.remove(page)
 
-    def set_background(self, page: Page, data: bytes, pdf_page: int = 1,
-                       size: tuple[float, float] | None = None) -> str:
-        """Replaces a page's paper with a PDF (or image) attachment.
-        `size` resizes the page; default keeps it."""
-        aid = self.add_attachment(data)
+    def set_background(self, page: Page, source, pdf_page: int = 1, size=None,
+                       landscape: bool | None = None) -> str:
+        """Replaces a page's paper with a custom background and returns its
+        attachment id. `source` is PDF/PNG/JPEG bytes (other image formats
+        need Pillow), a path to such a file or to a .goodnotes, or a
+        `Document`. `pdf_page` (1-based) picks the PDF page, or for a
+        notebook the page whose paper to copy.
+
+        `size` is the new page size in page units: any (w, h), e.g.
+        `paper.SIZES["a4"]`; default keeps the page's size. `landscape`
+        True/False turns it that way. The background is drawn over the
+        whole page at that size."""
+        if isinstance(source, (str, os.PathLike)):
+            with open(source, "rb") as f:
+                source = f.read()
+        if isinstance(source, bytes) and source[:4] == b"PK\x03\x04":
+            source = Document(io.BytesIO(source))
+        if isinstance(source, Document):
+            src = source.pages[pdf_page - 1]
+            aid, pdf_page = src.background
+            if aid is None:
+                raise ValueError(f"page {src} has no background attachment")
+            source = source.attachments[aid]
+        size = paper.oriented(size or page.size, landscape)
+        if source[:4] != b"%PDF":
+            source, pdf_page = paper.image_pdf(source, size), 1
+        aid = self.add_attachment(source)
         layer = page.layer
         layer.set_bytes(4, aid)
         layer.set_int(5, pdf_page)
         layer.remove(9)  # template name: no longer a built-in paper
-        if size is not None:
-            layer.set_bytes(8, write_point(*size))
+        layer.set_bytes(8, write_point(*size))
         return aid
+
+    def set_paper(self, page: Page, template: str = "blank", color: str = "white", size=None,
+                  landscape: bool | None = None) -> str:
+        """GoodNotes Essentials paper (`paper.TEMPLATES`: blank, dotted,
+        squared, narrow_ruled, wide_ruled; `paper.COLORS`: white, yellow,
+        black), generated for the page's size. `size`/`landscape` as in
+        `set_background`."""
+        size = paper.oriented(size or page.size, landscape)
+        return self.set_background(page, paper.paper_pdf(template, color, size), size=size)
 
     # page attributes and outline (each is its own event; the last one wins)
     def _event(self, kind: int, target: str, body: Msg, version_field: int = 15) -> Msg:
