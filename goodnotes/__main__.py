@@ -218,6 +218,64 @@ def make_testkit(directory, only=None) -> list[str]:
         p.append(new_pencil_stroke(d, shifted(360), pressure=lambda t: t))
     kits["12_pencil_variants"] = pencil_variants
 
+    # Round 8: what README still lists as not checked. Each page says what it should look like.
+    from . import paper as P
+
+    def label(d, page, text):
+        page.append(new_text_box(d, (60, 40), text, max_width=600, font_size=20))
+
+    def paper_templates(d):
+        combos = [(t, c) for c in ("white", "yellow", "black") for t in sorted(P.TEMPLATES)]
+        for i, (t, c) in enumerate(combos):
+            page = d.pages[0] if i == 0 else d.add_page()
+            d.set_paper(page, t, c)
+            label(d, page, f"{t} on {c}")
+    kits["13a_paper_templates"] = paper_templates
+
+    def paper_sizes(d):
+        for i, (t, c, size, land, what) in enumerate([
+                ("wide_ruled", "yellow", P.SIZES["a4"], True, "A4 landscape, wide ruled, yellow"),
+                ("dotted", "white", P.SIZES["letter"], None, "Letter portrait, dotted, white"),
+                ("squared", "black", (900, 1200), None, "custom 900 x 1200, squared, black")]):
+            page = d.pages[0] if i == 0 else d.add_page()
+            d.set_paper(page, t, c, size, landscape=land)
+            label(d, page, what)
+    kits["13b_paper_sizes"] = paper_sizes
+
+    def backgrounds(d):
+        from .pdf import document_to_pdf
+        import io
+        p1 = d.pages[0]
+        d.set_background(p1, png(64, 48, (60, 140, 220)), size=P.SIZES["standard"])
+        label(d, p1, "PNG background: solid blue, stretched over the whole page")
+        two = Document.new("two", "squared", "white", pages=2)
+        two.pages[1].append(new_stroke(two, [("M", (100, 500)), ("L", (700, 500))], (0.9, 0.1, 0.1, 1), 12))
+        buf = io.BytesIO()
+        document_to_pdf(two, buf)
+        p2 = d.add_page()
+        d.set_background(p2, buf.getvalue(), pdf_page=2)
+        label(d, p2, "PDF page 2 as background: squared paper with one thick red line")
+        other = Document.new("other", "dotted", "black")
+        p3 = d.add_page()
+        d.set_background(p3, other, pdf_page=1)
+        label(d, p3, "paper copied from another notebook: dotted on black")
+    kits["14_backgrounds"] = backgrounds
+
+    def comment_resolved(d):
+        t = d.add_comment(d.pages[0], (200, 300), "resolved thread", author="Taylor")
+        d.add_comment(d.pages[0], (0, 0), "a reply", author="Taylor", thread=t)
+        d.resolve_comment(t)
+        d.add_comment(d.pages[0], (500, 600), "open thread", author="Taylor")
+    kits["08f_comment_resolved"] = comment_resolved
+
+    def alignment(d):
+        d.pages[0].append(new_text_box(d, (60, 100), RichText.build([
+            TextRun("left aligned paragraph"), TextRun("\ncentered paragraph", align="center"),
+            TextRun("\nright aligned paragraph", align="right"),
+            TextRun("\njustified paragraph that runs long enough to wrap onto a second line so the spacing shows",
+                    align="justify")]), max_width=600))
+    kits["05b_text_alignment"] = alignment
+
     paths = []
     for name, build in kits.items():
         if only and not any(name.startswith(o) for o in only):
