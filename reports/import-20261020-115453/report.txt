@@ -1,0 +1,96 @@
+GoodNotes import report — ground truth + fix re-check — 2026-10-20 11:54 UTC
+Branch feat/full-format @ 0260ea1, python3 -m unittest: 43 OK.
+Job 2 kit: testkit --only 06,09,10a,11,13a,14, imported via background accessibility into "Test"
+(one import sheet; "Bulk imported" 7/7/10/7/64/16 events, no errors, no crash reports, GoodNotes pid
+unchanged). Page screenshots taken in the background. Pointer/save-panel work (audio playback,
+09 tap, exports, all of Job 1) done in one full-screen batch after HIDIdleTime >= 120 s
+(11:57-12:04 UTC), then the screen was handed back. All 7 notebooks (6 kit + zz_ground_truth) moved
+to GoodNotes trash (projection deleted=1). Side effect: one toolbar mis-click copied the word
+"highlight" to the clipboard.
+
+Summary
+  check                                          result  evidence
+  06 pink box position (GN PDF vs our PDF)       PASS    06_side_by_side_gn_left_ours_right.png
+  06 sticky author bottom-left                   PASS    same; 06_p1.png
+  06 curved arrow                                NOTE    GN: wider arc, filled head; ours: flatter arc, open head
+  09 tap red -> only red+green, dup separate     PASS    09_tap_red_selection.png (box around red+green only)
+  10a tone plays through 2 s                     FAIL    10a_audio_after_3s.png: Pause shown, playhead at 00:00 after 3 s
+  11 both boxes wrap                             PASS    11_p1.png (A and B wrap inside the box, 3 lines each)
+  13a Goodnotes export, no warning               PASS    went straight to the save panel; gn_exports/13a_*.goodnotes
+  14 Goodnotes export, no warning                PASS    same; gn_exports/14_*.goodnotes
+  Job 1 ground truth (zz_ground_truth)           done    gn_exports/zz_ground_truth.goodnotes, decoded below
+
+Job 1 — what GoodNotes for Mac offers
+- Pen dash styles: none. The Writing tool has Fountain / Ball / Brush pens; Ball Pen options are only
+  stroke stabilization (+ spellcheck, Pen Settings: Reduce Latency, Draw and Hold, Pen Gestures).
+  Dashes exist only for SHAPES: Shapes tool > Stroke Settings = Solid / Dashed / Dotted, width,
+  rounded corners, arrowheads. So I drew a plain ball-pen stroke and a dashed rectangle.
+- Text box: no Heading paragraph style, no text highlight colour, no Justify. The text toolbar has
+  font (Modern/Classic/Technical/More Fonts), size, B/I/U/S, Left/Center/Right, list style
+  (bulleted/numbered), text colour, link. Format > Text > Justify exists in the menu bar but is
+  always disabled. So the box has plain "Heading" / "plain highlight word" / long paragraph
+  (left-aligned) / two bulleted items.
+- Shape shadow: none. Rectangle options: colour + Fill Color toggle + opacity, Stroke Settings,
+  Lock, arrange, Edit Shape, Add Comment. No shadow anywhere.
+- Audio: Accessories > Record & Summarize, ~6 s recorded. GoodNotes' own recording PLAYS (playhead
+  moved 00:00 -> 00:01 after 2 s), unlike the kit's 10a.
+- Favourite: starred in the library; projection documents.favourited=1, and the export has a 34.
+
+Job 1 — decoded records (full trees in zz_page_items_decoded.txt / zz_events_decoded.txt)
+Ball-pen stroke (page record field 7):
+  7 { 1 id, 2 bv41 points blob ("tpl" raw, 199 bytes), 4 colour {2:0.478 3:1.0 4:1.0} (blue, r=0
+      omitted), 6 '', 7 {1:{2:stamp}}, 9 '', 15 {1:2, 2:stamp}, 20 '', 21 24 }
+  No dash field — the pen can't make one.
+Rectangle (page record field 21, item type 35):
+  21 { 1 id, 2 35, 3 {1:11, 2:stamp}, 7 {1:{1:1, 2:stamp}},
+       20 transform {1:{1:92.81 2:266.48}, 3:1.0},
+       21 sizing {2:{1:274.35 2:164.61 3:inf}},
+       22 {1:''},
+       30 fill {1:{1:{0.298 0.776 0.306 a=0.10}}},
+       31 stroke {1:3.0 width, 2:{2:{1:3.0, 2:4.0}} dash pattern 3 on / 4 off, 3:{1:{0.298 0.776 0.306 a=1}}},
+       32 empty text: rich text with one style-only paragraph (colour = stroke colour, size 21.23,
+          3.4 = 2) and box {1:258.35, 2:26.0}, font 'Helvetica Neue' 21.23 }
+  No shadow field (33 absent).
+Text box (page record field 21, item type 35):
+  21 { 1 id, 2 35, 3 {1:3}, 7 {1:{1:2}}, 9 1, 20 {1:{30.66, 629.57}, 3:1.0},
+       21 sizing {3:{1:32.0 2:600.0 3:32.0 4:inf}}, 22 {1:''}, 30 fill white, 31 {2:{1:''}, 3: white},
+       32 { 1 { 2 bv41 rich text, 3 hash, 4 1 }, 2 {562.5, 172.5}, 5 default style {1:{3:{4:1.0},
+            30:'Helvetica Neue', 40:24.0, 60:-60, 70:-20.0}, 2:{1:{1:''},2:'',3:{1:-1,2:-1}}},
+            10 insets {10,10,10,10}, 11 '' },
+       33 {1:{4:0.2}, 3:{2:5.0}} }
+  Rich-text segments (bv41 -> repeated field 1, one per paragraph):
+    "Heading\n"                         run {3: colour 1,1,1,1; 40:-404; 60:-404; 70:-404}
+                                        para {1:{1:''}, 2:{1:-1}, 3:{1:-1, 2:-1}}
+    "plain highlight word\n"            same run + para (no highlight attribute — UI has none)
+    "This justified paragraph ... box.\n" same (left-aligned; Justify unavailable)
+    "first item\n"                      same run; para 3 = '' (empty)   <- bulleted
+    "second item"                       same run; para 3 = '' (empty)   <- bulleted
+  So a bulleted paragraph is para field 3 present-but-empty, vs {1:-1, 2:-1} for a plain paragraph.
+Audio (event 160) + attachment (event 6):
+  160 { 1 audio id, 2 attachment E762AE5D…, 3 doc id, 4 4374720000 (flicks = 6.2 s), 5 '' (no
+        page refs), 6 {2:{1:1, 2:stamp}} (name LWW, no value = unnamed), 10 time, 11 id, 13, 14, 15 24 }
+  6 { 1/2 E762AE5D…, 5 57860 bytes, 6 doc id, 10, 11, 12 '' (empty), 14, 15, 16 24 }
+  Attachment: ISO MP4 (ftyp mp42, first bytes 00000018 66747970 6d703432 00000000 6d703432 69736f6d),
+  1 ch AAC 22050 Hz, 6.2 s, ~32 kbit/s.
+Favourite (event 34): exported.
+  34 { 1 doc id, 2 {1:1, 2:{1:1, 2:326021137}}, 10 time, 11 id, 13, 14, 15 24 }
+
+Differences from what the kit writes (likely causes of the remaining failures)
+- 10a audio: kit attachment is RIFF WAVE PCM 16-bit mono 44.1 kHz; GoodNotes records MP4/AAC.
+  Kit's attachment event has 12 {1:1, 2:1} (same as the PDF background attachment); GoodNotes
+  writes 12 '' for the audio attachment. Either could be why playback never advances.
+- 08b favourite (failed in the full regression): kit's 34 has 2 {1:1, 2:{2:stamp}}; GoodNotes
+  writes 2 {1:1, 2:{1:1, 2:stamp}} — the stamp's field 1 (=1) is missing in ours.
+- Dashed ballpoint (02): GoodNotes can't make a dashed pen stroke at all, so a stroke dash isn't
+  ground-truthable; dashes are a shape stroke property: 31 {1 width, 2 {2 {1 on, 2 off}}}.
+- Heading / highlight / justify (05, 05b) and shape shadow (06): GoodNotes for Mac has no UI for
+  them, so no ground truth from this machine; the iPad app may have them.
+
+Files
+  06_p1.png, 09_p1.png, 11_p1.png        page screenshots (screencapture -l)
+  09_tap_red_selection.png, 10a_audio_after_3s.png
+  06_ours.pdf, 09_ours.pdf                python3 -m goodnotes export-pdf
+  06_side_by_side_gn_left_ours_right.png  GoodNotes PDF | our PDF (pdftoppm 72 dpi)
+  gn_exports/                             GoodNotes exports: 06 PDF, 13a/14/zz_ground_truth .goodnotes
+  zz_dump.txt, zz_dump_page0.txt          python3 -m goodnotes dump [--page 0]
+  zz_page_items_decoded.txt, zz_events_decoded.txt  same records fully decoded (bv41 expanded)
