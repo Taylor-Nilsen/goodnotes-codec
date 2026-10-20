@@ -112,6 +112,40 @@ class NewDocumentTest(unittest.TestCase):
             body = next(e.sub(133) for e in back.events if e.sub(133) is not None)
             self.assertEqual(body.sub(4).bytes(1), b"\x0a\x06First!")
 
+    def test_full_test_fixes(self):
+        """Fixes from the full GoodNotes test (reports/full-20261020-111939)."""
+        import math
+        from goodnotes.model import Box
+        doc = Document.new("F", pages=2)
+        page = doc.pages[0]
+        # GoodNotes turns a box about its stored origin; ours keep the center where it was
+        box = new_box(doc, (60, 260), (200, 120), fill=(1, 0, 0, 1), rotation=0.4)
+        page.append(box)
+        b = Box(box)
+        for angle in (0.4, 1.0):
+            b.rotation = angle
+            (ox, oy), (w, h), t = b.origin, b.size, b.rotation
+            center = (ox + w / 2 * math.cos(t) - h / 2 * math.sin(t), oy + w / 2 * math.sin(t) + h / 2 * math.cos(t))
+            self.assertAlmostEqual(center[0], 160.0, 3)
+            self.assertAlmostEqual(center[1], 320.0, 3)
+        # a duplicate isn't part of the original's group
+        a, c = new_box(doc, (60, 400), (50, 50), fill=(1, 0, 0, 1)), new_box(doc, (200, 400), (50, 50), fill=(0, 1, 0, 1))
+        page.append(a)
+        page.append(c)
+        page.group_items([a, c])
+        dup = page.duplicate(c, 100, 0)
+        self.assertEqual(len(page.group(a)), 2)
+        self.assertEqual(page.group(dup), [dup])
+        # every paper event comes after the attachment it uses (else GoodNotes' export warns)
+        doc.set_paper(doc.pages[1], "dotted", "black")
+        seen = set()
+        for e in doc.events:
+            if e.has(6):
+                seen.add(e.sub(6).str(1))
+            t = e.sub(2)
+            if t is not None and t.str(4):
+                self.assertIn(t.str(4), seen)
+
     def test_page_operations(self):
         doc = Document.new("Pages", pages=1)
         page = doc.pages[0]

@@ -179,25 +179,25 @@ def make_testkit(directory, only=None) -> list[str]:
     kits["09_erase_delete_group_duplicate"] = erase
 
     def audio(d):
-        d.add_audio_note(_silent_wav(2.0), 2.0, page=d.pages[0], name="Test recording", offsets=[0.0, 1.0])
+        d.add_audio_note(_tone_wav(2.0), 2.0, page=d.pages[0], name="Test recording", offsets=[0.0, 1.0])
     kits["10a_audio_note_with_page_refs"] = audio
 
     def audio_plain(d):
-        d.add_audio_note(_silent_wav(2.0), 2.0)
+        d.add_audio_note(_tone_wav(2.0), 2.0)
     kits["10b_audio_note_plain"] = audio_plain
 
     def audio_name(d):
-        d.add_audio_note(_silent_wav(2.0), 2.0, name="Test recording")
+        d.add_audio_note(_tone_wav(2.0), 2.0, name="Test recording")
     kits["10d_audio_note_name_no_refs"] = audio_name
 
     def wrap_variants(d):
-        """Which sizing wraps a long line: each box says which variant it is."""
+        """Both sizings wrap when the measured size is stored, as the library always does.
+        (Without it GoodNotes doesn't size the box and shows a clipped sliver: full test, 11.)"""
         from .model import Box, Msg, LEN, write_point
         long = " a long line of text that must wrap inside the box instead of running off the right edge of the page."
         p = d.pages[0]
         y = 60
-        for label, strategy, measured in (("A", "auto", True), ("B", "fixed-auto-height", True),
-                                          ("C", "fixed-auto-height", False), ("D", "auto", False)):
+        for label, strategy, measured in (("A", "auto", True), ("B", "fixed-auto-height", True)):
             it = new_text_box(d, (60, y), f"{label}:{long}", max_width=500)
             b = Box(it)
             if strategy == "fixed-auto-height":
@@ -292,10 +292,12 @@ def make_testkit(directory, only=None) -> list[str]:
     return paths
 
 
-def _silent_wav(seconds: float, rate: int = 8000) -> bytes:
+def _tone_wav(seconds: float, rate: int = 44100, hz: float = 440.0) -> bytes:
+    """A quiet 16-bit mono tone, so playback in GoodNotes is easy to judge."""
+    import math
     import struct
     n = int(seconds * rate)
-    data = b"\0\0" * n
+    data = b"".join(struct.pack("<h", int(3000 * math.sin(2 * math.pi * hz * i / rate))) for i in range(n))
     return (b"RIFF" + struct.pack("<I", 36 + len(data)) + b"WAVEfmt " + struct.pack("<IHHIIHH", 16, 1, 1, rate, rate * 2, 2, 16)
             + b"data" + struct.pack("<I", len(data)) + data)
 

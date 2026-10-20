@@ -240,7 +240,7 @@ BLOCK_TYPE = {1: "paragraph", 2: "heading"}          # heading {1 value}
 LIST_STYLE = {1: "type", 2: "startingItemNumber"}    # type: 0 BULLETED, 1 NUMBERED
 LIST_TYPE = {0: "BULLETED", 1: "NUMBERED"}
 LINE_HEIGHT = {1: "type", 2: "value"}                # type: 0 AUTOMATIC, 1 FIXED
-TEXT_ALIGNMENT = {0: "LEFT", 1: "CENTER", 2: "RIGHT", 3: "JUSTIFIED"}
+TEXT_ALIGNMENT = {1: "LEFT", 2: "CENTER", 3: "RIGHT"}  # as GoodNotes renders them (import round 8); 0 = unset (left), justify not yet found
 INHERIT = -404       # "use the default attributes" sentinel GoodNotes writes in char attrs
 
 PAGE_ROTATION = {0: "CLOCKWISE_0", 1: "CLOCKWISE_90", 2: "CLOCKWISE_180", 3: "CLOCKWISE_270"}

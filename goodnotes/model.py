@@ -499,6 +499,14 @@ def _comment_text(body: Msg) -> str:
     return raw.decode("utf-8", "replace")
 
 
+def _pivot_origin(center, size, radians: float) -> tuple[float, float]:
+    """Stored origin that puts a w x h box turned `radians` about its origin
+    (as GoodNotes draws it) with its center at `center`."""
+    (cx, cy), (w, h) = center, size
+    c, s = math.cos(radians), math.sin(radians)
+    return (cx - (w / 2 * c - h / 2 * s), cy - (w / 2 * s + h / 2 * c))
+
+
 def _audio_refs(r: Msg | None, by_id: dict) -> list:
     """[(seconds, Page)] from references {1 map<ref id, {1 timestampFlicks, 2 pageId}>}."""
     out = []
@@ -1180,17 +1188,24 @@ class _Rect(View):
 
     @property
     def rotation(self) -> float:
-        """Rotation about the box center, radians clockwise on screen."""
+        """Radians clockwise on screen. GoodNotes turns the box about its
+        stored origin (import round 8, 06), so setting this also moves the
+        origin to keep the box's center where it was."""
         t = self.b.sub(20)
         return t.float(2) if t is not None else 0.0
 
     @rotation.setter
     def rotation(self, radians: float) -> None:
+        (w, h), old = self.size, self.rotation
+        ox, oy = self.origin
+        c, s = math.cos(old), math.sin(old)
+        center = (ox + w / 2 * c - h / 2 * s, oy + w / 2 * s + h / 2 * c)
         t = self.b.sub(20, create=True)
         if radians:
             t.set_float(2, radians)
         else:
             t.remove(2)
+        t.set_bytes(1, write_point(*_pivot_origin(center, (w, h), radians)))
 
     @property
     def scale(self) -> float:
@@ -2028,6 +2043,8 @@ class Page:
         c = item.copy()
         if c.meta is not None:
             c.meta.set_int(9, max((r.int(9) for r in self.records if _is_meta(r)), default=0) + 1)
+        if c.kind in _VIEWS:
+            c.typed().group = None  # a copy is not part of the original's group (import round 9, 09)
         self.append(c)
         v = c.typed()
         if hasattr(v, "translate"):
@@ -2431,6 +2448,7 @@ class Document:
             layer.set_bytes(4, aid)
             layer.set_int(5, n + 1)
             layer.set_bytes(8, write_point(w * UNITS_PER_PT, h * UNITS_PER_PT))
+            doc._attachment_first(aid, layer)
         return doc
 
     # attachments
@@ -2647,7 +2665,17 @@ class Document:
         layer.set_int(5, pdf_page)
         layer.remove(9)  # template name: no longer a built-in paper
         layer.set_bytes(8, write_point(*size))
+        self._attachment_first(aid, layer)
         return aid
+
+    def _attachment_first(self, aid: str, layer: Msg) -> None:
+        """Moves attachment `aid`'s event (6) ahead of the paper event that
+        now uses it; otherwise GoodNotes' export warns "Early template
+        reference ... (recovered)" (import round 9, 13a/14)."""
+        ai = next((i for i, e in enumerate(self.events) if e.has(6) and e.sub(6).str(1) == aid), None)
+        li = next((i for i, e in enumerate(self.events) if e.sub(2) is layer), None)
+        if ai is not None and li is not None and ai > li:
+            self.events.insert(li, self.events.pop(ai))
 
     def set_paper(self, page: Page, template: str = "blank", color: str = "white", size=None,
                   landscape: bool | None = None) -> str:
@@ -3367,6 +3395,8 @@ def new_box(doc: Document, origin, size, text: RichText | None = None, fill=None
         b.set_int(9, 1)
     if locked:
         b.set_int(10, 1)
+    if rotation:  # turn about the center: GoodNotes turns about the stored origin
+        origin = _pivot_origin((origin[0] + size[0] / 2, origin[1] + size[1] / 2), size, rotation)
     tr = Msg([[1, LEN, write_point(*origin)]])
     if rotation:
         tr.set_float(2, rotation)
@@ -3524,6 +3554,8 @@ def new_sticky(doc: Document, origin, size=(256.0, 256.0), text: RichText | None
     b.set_int(2, BOX_VERSION)
     b.set_bytes(3, st.copy())
     b.set_bytes(7, Msg([[1, LEN, stamp()]]))
+    if rotation:  # turn about the center: GoodNotes turns about the stored origin
+        origin = _pivot_origin((origin[0] + size[0] / 2, origin[1] + size[1] / 2), size, rotation)
     tr = Msg([[1, LEN, write_point(*origin)]])
     if rotation:
         tr.set_float(2, rotation)

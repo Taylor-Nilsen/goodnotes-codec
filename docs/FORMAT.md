@@ -131,7 +131,7 @@ Stroke style: `{1 width, 2 pattern {1 solid | 2 dashed {1 dash, 2 gap}},
 3 shading {1 color}}` (dash/gap in multiples of width).
 
 Text (32): `{1 raw {1 type (0 ATTRIBUTED_TEXT), 2 rich-text blob, 3 8-byte
-content hash, 4 version}, 2 measured size, 5 defaultAttributes {1 inline,
+content hash, 4 version}, 2 measured size (required: GoodNotes lays text out at it and does not measure a box that lacks it), 5 defaultAttributes {1 inline,
 2 block}, 10 padding, 11 lineHeight}`. The hash algorithm is unknown;
 GoodNotes accepts any value.
 

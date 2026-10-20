@@ -387,8 +387,9 @@ def _layout(rt: RichText | None, width: float, default_size: float = 24.0,
     out, ly = [], 0.0
     for n, para in enumerate(rt.paragraphs()):
         first = para[0] if para else None
-        if first and first.list_style:
-            marker = "\u2022 " if first.list_style == "bullet" else f"{n + 1}. "
+        listed = bool(first and first.list_style)
+        if listed:  # GoodNotes indents list items: marker about 13 units in, text about 36
+            marker = "\u2022  " if first.list_style == "bullet" else f"{n + 1}.  "
             para = [TextRun(marker, size=first.size, color=first.color)] + para
         segs = []
         for r in para:
@@ -399,7 +400,7 @@ def _layout(rt: RichText | None, width: float, default_size: float = 24.0,
         size = max((s.size for s in segs), default=default_size)
         h = size * (first.line_height if first and first.line_height else 1.2)
         align = first.align if first and first.align else default_align
-        indent = (first.indent or 0) * 24 if first else 0
+        indent = ((first.indent or 0) * 24 if first else 0) + (13 if listed else 0)
         for line in _wrap(segs, max(width - indent, 1.0)):
             ly += h
             line_w = sum(_text_width(s.text, s.font, s.size) for s in line)
@@ -600,11 +601,11 @@ def _draw_stroke(cv: _Canvas, s: Stroke) -> None:
         if not segs:
             return
         w = f32(t.values[1])
-        dash, cap = None, 0 if mul else 1
+        dash, cap = None, 1  # GoodNotes draws highlighter ends round too (full test, 02)
         d = s.dash
         if d and d[0]:
             dash = [max(v * w, 0.01) for v in d[0]]
-            cap = 0 if mul else d[1]
+            cap = d[1]
         cv.style(stroke=color, width=w, cap=cap, join=1, dash=dash, multiply=mul)
         cv.path(segs, dot_subpaths=True)
         cv.op("S")
@@ -652,7 +653,7 @@ def _draw_box(cv: _Canvas, b: Box) -> None:
     attrs = t.path(5, 1) if t is not None else None
     size = (attrs.float(40) if attrs is not None else 24.0) or 24.0
     para = t.path(5, 2) if t is not None else None
-    align = {0: "left", 1: "center", 2: "right", 3: "justify"}.get(para.int(4), "left") if para is not None else "left"
+    align = TextRun.ALIGN_NAMES.get(para.int(4), "left") if para is not None else "left"
     text = b.text
     if text is not None and not text.text.strip():
         text = None
@@ -676,7 +677,7 @@ def _draw_box(cv: _Canvas, b: Box) -> None:
         outline = None
     cv.op("q")
     if b.rotation:
-        cv.op(_rotate_cm(b.rotation, x + w / 2, y + h / 2))
+        cv.op(_rotate_cm(b.rotation, x, y))  # GoodNotes turns about the origin
     cv.op("q")
     geo = b.geometry
     if geo == "ellipse":
@@ -698,13 +699,13 @@ def _draw_sticky(cv: _Canvas, s: Sticky) -> None:
     (x, y), (w, h) = s.origin, s.size
     cv.op("q")
     if s.rotation:
-        cv.op(_rotate_cm(s.rotation, x + w / 2, y + h / 2))
+        cv.op(_rotate_cm(s.rotation, x, y))
     cv.style(fill=s.color)
     cv.op(f"{_ns(x, y, w, h)} re f")
     head = bool(s.show_author and s.author[1])
-    if head:
-        _show(cv, s.author[1], "Helvetica", 11, x + 10, y + 16, (1 / 3, 1 / 3, 1 / 3, 1))
-    _draw_text(cv, s.text, x + 10, y + (18 if head else 4), max(w - 20, 1), 24.0)
+    if head:  # GoodNotes puts the author at the bottom left
+        _show(cv, s.author[1], "Helvetica", 11, x + 10, y + h - 10, (1 / 3, 1 / 3, 1 / 3, 1))
+    _draw_text(cv, s.text, x + 10, y + 4, max(w - 20, 1), 24.0)
     cv.op("Q")
 
 

@@ -198,7 +198,7 @@ def _stroke_svg(s: Stroke) -> str:
             return ""
         w = f32(t.values[1])
         return (f'<path d="{" ".join(d)}" fill="none" stroke="{color}" stroke-opacity="{alpha:.3f}" '
-                f'stroke-width="{w:.2f}" stroke-linecap="{"butt" if s.highlighter else "round"}" '
+                f'stroke-width="{w:.2f}" stroke-linecap="round" '
                 f'stroke-linejoin="round"{_stroke_dash(s, w)}{blend}/>')
     if t.schema in (VW_SCHEMA, DW_SCHEMA):
         d = _outline_d(t, dx, dy)
@@ -220,27 +220,30 @@ def _text_svg(rt: RichText | None, x: float, y: float, width: float, default_siz
     out, ly = [], y
     for n, para in enumerate(rt.paragraphs()):
         first = para[0] if para else None
-        if first and first.list_style:
-            marker = "• " if first.list_style == "bullet" else f"{n + 1}. "
+        listed = bool(first and first.list_style)
+        if listed:  # GoodNotes indents list items: marker about 13 units in, text about 36
+            marker = "•  " if first.list_style == "bullet" else f"{n + 1}.  "
             para = [TextRun(marker, size=first.size, color=first.color)] + para
         for line in _wrap(para, width, default_size):
             size = max((r.size or default_size for r in line), default=default_size)
             h = size * (first.line_height if first and first.line_height else 1.2)
             ly += h
-            out.append(_text_line(line, first, x, ly - h * 0.25, width, default_size, default_font,
-                                  default_align, default_color))
+            out.append(_text_line(line, first, x + (13 if listed else 0), ly - h * 0.25, width, default_size,
+                                  default_font, default_align, default_color))
     return "".join(out)
 
 
 def _wrap(para, width, default_size):
-    """Greedy word wrap of a paragraph's runs at `width` page units."""
+    """Greedy word wrap of a paragraph's runs at `width` page units, with
+    the PDF exporter's Helvetica widths so both wrap where GoodNotes does."""
+    from .pdf import _font_name, _text_width
     lines, cur, cur_w = [], [], 0.0
     for r in para:
         size = r.size or default_size
         for w in re.split(r"(\s+)", r.text):
             if not w:
                 continue
-            ww = 0.5 * size * len(w)
+            ww = _text_width(w, _font_name(r.bold or r.heading, r.italic), size)
             if cur and cur_w + ww > width and not w.isspace():
                 lines.append(cur)
                 cur, cur_w = [], 0.0
@@ -291,11 +294,13 @@ def _rotate(angle: float, cx: float, cy: float) -> str:
 def _box_svg(b: Box) -> str:
     (x, y), (w, h) = b.origin, b.size
     t = b.b.sub(32)
-    if b.sizing == "auto":  # auto-sized text box: wraps at its max width
+    if b.sizing == "auto":  # auto-sized text box: GoodNotes lays it out at its measured size, as pdf.py does
         mw = b.b.path(21, 3).float(2)
         measured = read_point(t.sub(2)) if t is not None and t.sub(2) is not None else (0.0, 0.0)
-        w = mw if 0 < mw < float("inf") else (measured[0] + 20 if measured[0] else 400.0)
-        h = measured[1] + 20 if measured[1] else h
+        if measured[0]:
+            w, h = max(w, measured[0] + 20), max(h, measured[1] + 20)
+        else:
+            w = mw if 0 < mw < float("inf") else 400.0
     fill = b.fill
     outline = b.outline
     fill_attr = f'fill="{_rgba(fill)[0]}" fill-opacity="{fill[3]:.3f}"' if fill else 'fill="none"'
@@ -312,7 +317,7 @@ def _box_svg(b: Box) -> str:
                 f'<feDropShadow dx="{shadow[2][0]:.2f}" dy="{shadow[2][1]:.2f}" stdDeviation="{shadow[1] / 2:.2f}" '
                 f'flood-color="{sc}" flood-opacity="{sa:.3f}"/></filter>')
     filt_attr = f' filter="url(#sh{b.id})"' if filt else ""
-    out = [filt, f'<g{_rotate(b.rotation, x + w / 2, y + h / 2)}>']
+    out = [filt, f'<g{_rotate(b.rotation, x, y)}>']  # GoodNotes turns about the origin
     geo = b.geometry
     if geo == "ellipse":
         out.append(f'<ellipse cx="{x + w / 2:.2f}" cy="{y + h / 2:.2f}" rx="{w / 2:.2f}" ry="{h / 2:.2f}" {fill_attr} {stroke_attr}{filt_attr}/>')
@@ -358,9 +363,10 @@ def _sticky_svg(s: Sticky) -> str:
     col, a = _rgba(s.color)
     head = ""
     if s.show_author and s.author[1]:
-        head = f'<text x="{x + 10:.2f}" y="{y + 16:.2f}" font-family="Helvetica Neue" font-size="11" fill="#555">{html.escape(s.author[1])}</text>'
-    return (f'<g{_rotate(s.rotation, x + w / 2, y + h / 2)}><rect x="{x:.2f}" y="{y:.2f}" width="{w:.2f}" height="{h:.2f}" '
-            f'fill="{col}" fill-opacity="{a:.3f}"/>{head}' + _text_svg(s.text, x + 10, y + (18 if head else 4), w - 20, 24.0) + "</g>")
+        # GoodNotes puts the author at the bottom left
+        head = f'<text x="{x + 10:.2f}" y="{y + h - 10:.2f}" font-family="Helvetica Neue" font-size="11" fill="#555">{html.escape(s.author[1])}</text>'
+    return (f'<g{_rotate(s.rotation, x, y)}><rect x="{x:.2f}" y="{y:.2f}" width="{w:.2f}" height="{h:.2f}" '
+            f'fill="{col}" fill-opacity="{a:.3f}"/>{head}' + _text_svg(s.text, x + 10, y + 4, w - 20, 24.0) + "</g>")
 
 
 def _line_svg(ln: Line, marker_id: str) -> str:
