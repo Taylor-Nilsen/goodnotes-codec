@@ -948,7 +948,21 @@ _KEY_ALPHABET = "!-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwx
 
 
 def key_between(a: str | None, b: str | None) -> str:
-    """A key that sorts strictly between a and b (None = open end)."""
+    """A key that sorts strictly between a and b (None = open end).
+
+    Appending (b None) steps a up by one in its last digit, like GoodNotes'
+    own keys ("43elQ2"), instead of bisecting toward "~": a first character
+    of "~" leaves GoodNotes no key after the last page, so its "add page at
+    the end" silently does nothing."""
+    if b is None:
+        if not a:
+            return "40"
+        digits = [_KEY_ALPHABET.index(c) if c in _KEY_ALPHABET else 0 for c in a]
+        for i in range(len(digits) - 1, -1, -1):
+            if digits[i] < len(_KEY_ALPHABET) - 1:
+                return ("".join(_KEY_ALPHABET[d] for d in digits[:i]) + _KEY_ALPHABET[digits[i] + 1]
+                        + _KEY_ALPHABET[1] * (len(digits) - i - 1))  # "4~" -> "5-", never a trailing "!"
+        return a + _KEY_ALPHABET[len(_KEY_ALPHABET) // 2]
     lo, hi = _KEY_ALPHABET[0], _KEY_ALPHABET[-1]
     a = a or ""
     out = ""
