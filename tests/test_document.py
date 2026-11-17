@@ -33,6 +33,12 @@ class DocumentTest(unittest.TestCase):
         for a, b in [(None, None), ("K0", "K1"), ("a", "a0"), (None, "4R"), ("z", None)]:
             k = key_between(a, b)
             self.assertTrue((a is None or a < k) and (b is None or k < b), (a, b, k))
+        k = None  # appending must leave room after the last page (GoodNotes' "add page at end")
+        for _ in range(500):
+            k2 = key_between(k, None)
+            self.assertTrue(k is None or k < k2)
+            k = k2
+        self.assertLess(k[0], "~")
 
     def test_add_move_delete_page(self):
         doc = Document(self.path)
